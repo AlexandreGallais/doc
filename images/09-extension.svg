@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="318" viewBox="0 0 960 318" role="img" aria-labelledby="t d">
+<title id="t">Une extension suit le cycle de vie d'un composant</title>
+<desc id="d">Le dépôt de l'extension passe par la CI, qui publie une version dans le registre. Le manifeste de livraison cite cette version ; le socle la charge au démarrage.</desc>
+<style>text{font-family:-apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, sans-serif;}.m{font-family:ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, 'Liberation Mono', monospace;}</style>
+<defs><marker id="arr" viewBox="0 0 10 10" refX="10" refY="5" markerUnits="userSpaceOnUse" markerWidth="9" markerHeight="9" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#64748B"/></marker></defs>
+<rect x="0.5" y="0.5" width="959" height="317" rx="14" fill="#FFFFFF" stroke="#E2E8F0"/>
+<text x="32.0" y="44.0" font-size="19" font-weight="700" fill="#0F172A" text-anchor="start">Une extension suit le cycle de vie d'un composant</text>
+<text x="32.0" y="68.0" font-size="13.5" font-weight="400" fill="#475569" text-anchor="start">Elle est développée, testée et versionnée comme du code ; la configuration ne fait que la citer.</text>
+<rect x="32.0" y="100.0" width="150.4" height="108.0" rx="10" fill="#E1F5F1" stroke="#14968A" stroke-width="1.3"/>
+<text x="44.0" y="128.0" font-size="14" font-weight="700" fill="#115E59" text-anchor="start">Extension</text>
+<text x="44.0" y="158.0" font-size="12" font-weight="400" fill="#475569" text-anchor="start">dépôt dédié :</text>
+<text x="44.0" y="175.0" font-size="12" font-weight="400" fill="#475569" text-anchor="start">code et tests</text>
+<path d="M182.4 154.0 H216.4" fill="none" stroke="#64748B" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arr)"/>
+<rect x="218.4" y="100.0" width="150.4" height="108.0" rx="10" fill="#F1F3F6" stroke="#8A94A6" stroke-width="1.3"/>
+<text x="230.4" y="128.0" font-size="14" font-weight="700" fill="#334155" text-anchor="start">Pipeline CI</text>
+<text x="230.4" y="158.0" font-size="12" font-weight="400" fill="#475569" text-anchor="start">compile, teste,</text>
+<text x="230.4" y="175.0" font-size="12" font-weight="400" fill="#475569" text-anchor="start">publie</text>
+<path d="M368.8 154.0 H402.8" fill="none" stroke="#64748B" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arr)"/>
+<path d="M404.8 108 V200 A75.2 8 0 0 0 555.2 200 V108" fill="#F1F3F6" stroke="#8A94A6" stroke-width="1.3"/>
+<ellipse cx="480.0" cy="108" rx="75.2" ry="8" fill="#FFFFFF" stroke="#8A94A6" stroke-width="1.3"/>
+<text x="416.8" y="134.0" font-size="14" font-weight="700" fill="#0F172A" text-anchor="start">Registre</text>
+<text x="416.8" y="158.0" font-size="12" font-weight="400" fill="#475569" text-anchor="start" class="m">extension-c</text>
+<text x="416.8" y="175.0" font-size="12" font-weight="400" fill="#475569" text-anchor="start" class="m">version 1.2.0</text>
+<path d="M555.2 154.0 H589.2" fill="none" stroke="#64748B" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arr)"/>
+<rect x="591.2" y="100.0" width="150.4" height="108.0" rx="10" fill="#E4F5E8" stroke="#2E9A52" stroke-width="1.3"/>
+<text x="603.2" y="128.0" font-size="14" font-weight="700" fill="#14532D" text-anchor="start">Livraison</text>
+<text x="603.2" y="158.0" font-size="12" font-weight="400" fill="#475569" text-anchor="start">le manifeste du</text>
+<text x="603.2" y="175.0" font-size="12" font-weight="400" fill="#475569" text-anchor="start">CSCI C cite</text>
+<text x="603.2" y="192.0" font-size="12" font-weight="400" fill="#475569" text-anchor="start" class="m">extension-c 1.2.0</text>
+<path d="M741.6 154.0 H775.6" fill="none" stroke="#64748B" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arr)"/>
+<rect x="777.6" y="100.0" width="150.4" height="108.0" rx="10" fill="#E8F0FE" stroke="#3B6FD4" stroke-width="1.3"/>
+<text x="789.6" y="128.0" font-size="14" font-weight="700" fill="#1E3A8A" text-anchor="start">Socle</text>
+<text x="789.6" y="158.0" font-size="12" font-weight="400" fill="#475569" text-anchor="start">charge la version</text>
+<text x="789.6" y="175.0" font-size="12" font-weight="400" fill="#475569" text-anchor="start">déclarée</text>
+<circle cx="41.0" cy="249.5" r="9" fill="#FEE2E2" stroke="#DC2626" stroke-width="1.2"/>
+<path d="M37.5 246 L44.5 253 M44.5 246 L37.5 253" fill="none" stroke="#DC2626" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+<text x="60.0" y="254.0" font-size="13" font-weight="400" fill="#0F172A" text-anchor="start">Le binaire n'est jamais copié dans un dépôt de configuration : il perdrait le lien avec son code source.</text>
+<circle cx="41.0" cy="279.5" r="9" fill="#1E293B"/>
+<text x="41.0" y="283.5" font-size="12" font-weight="700" fill="#FFFFFF" text-anchor="middle">i</text>
+<text x="60.0" y="284.0" font-size="13" font-weight="400" fill="#0F172A" text-anchor="start">L'interface entre le socle et ses extensions est publiée comme un package séparé.</text>
+</svg>

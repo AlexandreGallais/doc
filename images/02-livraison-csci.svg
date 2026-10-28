@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="352" viewBox="0 0 960 352" role="img" aria-labelledby="t d">
+<title id="t">Un CSCI se livre toujours de la même façon</title>
+<desc id="d">Les composants publient des versions dans un registre. Le dépôt de livraison du CSCI les épingle dans son manifeste, avec la configuration et les scripts. Le tag de ce dépôt est la baseline.</desc>
+<style>text{font-family:-apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, sans-serif;}.m{font-family:ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, 'Liberation Mono', monospace;}</style>
+<defs><marker id="arr" viewBox="0 0 10 10" refX="10" refY="5" markerUnits="userSpaceOnUse" markerWidth="9" markerHeight="9" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#64748B"/></marker></defs>
+<rect x="0.5" y="0.5" width="959" height="351" rx="14" fill="#FFFFFF" stroke="#E2E8F0"/>
+<text x="32.0" y="44.0" font-size="19" font-weight="700" fill="#0F172A" text-anchor="start">Un CSCI se livre toujours de la même façon</text>
+<text x="32.0" y="68.0" font-size="13.5" font-weight="400" fill="#475569" text-anchor="start">Les composants publient des versions ; le dépôt de livraison les épingle ; le tag fige l'ensemble.</text>
+<text x="32.0" y="116.0" font-size="13.5" font-weight="700" fill="#0F172A" text-anchor="start">Composants</text>
+<rect x="32.0" y="128.0" width="170.0" height="30.0" rx="6" fill="#E8F0FE" stroke="#3B6FD4" stroke-width="1.2"/>
+<text x="117.0" y="147.5" font-size="12.5" font-weight="600" fill="#1E3A8A" text-anchor="middle" class="m">ihm 1.4.2</text>
+<rect x="32.0" y="168.0" width="170.0" height="30.0" rx="6" fill="#E8F0FE" stroke="#3B6FD4" stroke-width="1.2"/>
+<text x="117.0" y="187.5" font-size="12.5" font-weight="600" fill="#1E3A8A" text-anchor="middle" class="m">services 3.1.0</text>
+<rect x="32.0" y="208.0" width="170.0" height="30.0" rx="6" fill="#F1EBFE" stroke="#7A4FD6" stroke-width="1.2"/>
+<text x="117.0" y="227.5" font-size="12.5" font-weight="600" fill="#4C1D95" text-anchor="middle" class="m">service-b 2.0.5</text>
+<path d="M202 143.0 H224" fill="none" stroke="#94A3B8" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M202 183.0 H224" fill="none" stroke="#94A3B8" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M202 223.0 H224" fill="none" stroke="#94A3B8" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M224 143.0 V223.0" fill="none" stroke="#94A3B8" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M224 183.0 H260" fill="none" stroke="#64748B" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arr)"/>
+<path d="M262.0 153.0 V217.0 A62.0 8 0 0 0 386.0 217.0 V153.0" fill="#F1F3F6" stroke="#8A94A6" stroke-width="1.3"/>
+<ellipse cx="324.0" cy="153.0" rx="62.0" ry="8" fill="#FFFFFF" stroke="#8A94A6" stroke-width="1.3"/>
+<text x="324.0" y="189.0" font-size="13.5" font-weight="700" fill="#0F172A" text-anchor="middle">Registre</text>
+<text x="324.0" y="207.0" font-size="11.5" font-weight="400" fill="#475569" text-anchor="middle">images, packages</text>
+<rect x="432.0" y="96.0" width="270.0" height="212.0" rx="12" fill="#E4F5E8" stroke="#2E9A52" stroke-width="1.3"/>
+<text x="448.0" y="122.0" font-size="13.5" font-weight="700" fill="#14532D" text-anchor="start">Dépôt de livraison · CSCI B</text>
+<rect x="448.0" y="136.0" width="238.0" height="44.0" rx="8" fill="#FFFFFF" stroke="#CBD5E1" stroke-width="1"/>
+<text x="460.0" y="155.0" font-size="12.5" font-weight="700" fill="#0F172A" text-anchor="start" class="m">manifest.yaml</text>
+<text x="460.0" y="171.0" font-size="11.5" font-weight="400" fill="#475569" text-anchor="start">versions épinglées</text>
+<rect x="448.0" y="188.0" width="238.0" height="44.0" rx="8" fill="#FFFFFF" stroke="#CBD5E1" stroke-width="1"/>
+<text x="460.0" y="207.0" font-size="12.5" font-weight="700" fill="#0F172A" text-anchor="start" class="m">config/</text>
+<text x="460.0" y="223.0" font-size="11.5" font-weight="400" fill="#475569" text-anchor="start">configuration retenue</text>
+<rect x="448.0" y="240.0" width="238.0" height="44.0" rx="8" fill="#FFFFFF" stroke="#CBD5E1" stroke-width="1"/>
+<text x="460.0" y="259.0" font-size="12.5" font-weight="700" fill="#0F172A" text-anchor="start" class="m">scripts/  VDD.md</text>
+<text x="460.0" y="275.0" font-size="11.5" font-weight="400" fill="#475569" text-anchor="start">scripts, doc de version</text>
+<path d="M386 183.0 H409 V158.0 H446" fill="none" stroke="#64748B" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arr)"/>
+<rect x="481.1" y="295.0" width="171.9" height="26.0" rx="13" fill="#1E293B"/>
+<text x="567.0" y="312.5" font-size="12" font-weight="700" fill="#FFFFFF" text-anchor="middle">tag v2.3.0 = baseline</text>
+<path d="M702 202.0 H740" fill="none" stroke="#64748B" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arr)"/>
+<rect x="742.0" y="150.0" width="186.0" height="104.0" rx="10" fill="#1E293B"/>
+<text x="758.0" y="176.0" font-size="14" font-weight="700" fill="#FFFFFF" text-anchor="start">Livrable du CSCI B</text>
+<text x="758.0" y="200.0" font-size="12" font-weight="400" fill="#CBD5E1" text-anchor="start">image(s) conteneur</text>
+<text x="758.0" y="218.0" font-size="12" font-weight="400" fill="#CBD5E1" text-anchor="start">scripts hors image</text>
+<text x="758.0" y="236.0" font-size="12" font-weight="400" fill="#CBD5E1" text-anchor="start">doc de version (VDD)</text>
+</svg>

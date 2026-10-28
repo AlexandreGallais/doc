@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="418" viewBox="0 0 960 418" role="img" aria-labelledby="t d">
+<title id="t">Cinq types de contenu, un livrable par CSCI</title>
+<desc id="d">Le socle, le code spécifique, les extensions et la configuration alimentent le dépôt de livraison, qui produit le livrable du CSCI : images, scripts, documentation de version.</desc>
+<style>text{font-family:-apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, sans-serif;}.m{font-family:ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, 'Liberation Mono', monospace;}</style>
+<defs><marker id="arr" viewBox="0 0 10 10" refX="10" refY="5" markerUnits="userSpaceOnUse" markerWidth="9" markerHeight="9" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#64748B"/></marker></defs>
+<rect x="0.5" y="0.5" width="959" height="417" rx="14" fill="#FFFFFF" stroke="#E2E8F0"/>
+<text x="32.0" y="44.0" font-size="19" font-weight="700" fill="#0F172A" text-anchor="start">Cinq types de contenu, un livrable par CSCI</text>
+<text x="32.0" y="68.0" font-size="13.5" font-weight="400" fill="#475569" text-anchor="start">Chaque type a son propre cycle de vie ; tous convergent vers le dépôt de livraison du CSCI.</text>
+<rect x="32.0" y="96.0" width="308.0" height="62.0" rx="10" fill="#E8F0FE" stroke="#3B6FD4" stroke-width="1.3"/>
+<text x="50.0" y="122.0" font-size="14.5" font-weight="700" fill="#1E3A8A" text-anchor="start">Socle</text>
+<text x="50.0" y="142.0" font-size="12.5" font-weight="400" fill="#475569" text-anchor="start">Code générique, commun à plusieurs CSCI</text>
+<rect x="32.0" y="172.0" width="308.0" height="62.0" rx="10" fill="#F1EBFE" stroke="#7A4FD6" stroke-width="1.3"/>
+<text x="50.0" y="198.0" font-size="14.5" font-weight="700" fill="#4C1D95" text-anchor="start">Code spécifique</text>
+<text x="50.0" y="218.0" font-size="12.5" font-weight="400" fill="#475569" text-anchor="start">Code qui n'existe que pour un CSCI</text>
+<rect x="32.0" y="248.0" width="308.0" height="62.0" rx="10" fill="#E1F5F1" stroke="#14968A" stroke-width="1.3"/>
+<text x="50.0" y="274.0" font-size="14.5" font-weight="700" fill="#115E59" text-anchor="start">Extension</text>
+<text x="50.0" y="294.0" font-size="12.5" font-weight="400" fill="#475569" text-anchor="start">Code compilé, chargé par le socle</text>
+<rect x="32.0" y="324.0" width="308.0" height="62.0" rx="10" fill="#FFF3DA" stroke="#D08A0E" stroke-width="1.3"/>
+<text x="50.0" y="350.0" font-size="14.5" font-weight="700" fill="#7A4504" text-anchor="start">Configuration</text>
+<text x="50.0" y="370.0" font-size="12.5" font-weight="400" fill="#475569" text-anchor="start">Paramètres qui adaptent le socle</text>
+<path d="M340 127.0 H380" fill="none" stroke="#94A3B8" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M340 203.0 H380" fill="none" stroke="#94A3B8" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M340 279.0 H380" fill="none" stroke="#94A3B8" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M340 355.0 H380" fill="none" stroke="#94A3B8" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M380 127.0 V355.0" fill="none" stroke="#94A3B8" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M380 241.0 H418" fill="none" stroke="#64748B" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arr)"/>
+<rect x="420.0" y="175.0" width="230.0" height="132.0" rx="10" fill="#E4F5E8" stroke="#2E9A52" stroke-width="1.3"/>
+<text x="438.0" y="205.0" font-size="14.5" font-weight="700" fill="#14532D" text-anchor="start">Dépôt de livraison</text>
+<text x="438.0" y="233.0" font-size="12.5" font-weight="400" fill="#475569" text-anchor="start">manifeste des versions</text>
+<text x="438.0" y="255.0" font-size="12.5" font-weight="400" fill="#475569" text-anchor="start">configuration retenue</text>
+<text x="438.0" y="277.0" font-size="12.5" font-weight="400" fill="#475569" text-anchor="start">scripts, doc de version</text>
+<path d="M650 241.0 H708" fill="none" stroke="#64748B" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arr)"/>
+<rect x="710.0" y="175.0" width="218.0" height="132.0" rx="10" fill="#1E293B"/>
+<text x="728.0" y="205.0" font-size="14.5" font-weight="700" fill="#FFFFFF" text-anchor="start">Livrable du CSCI</text>
+<text x="728.0" y="233.0" font-size="12.5" font-weight="400" fill="#CBD5E1" text-anchor="start">image(s) conteneur</text>
+<text x="728.0" y="255.0" font-size="12.5" font-weight="400" fill="#CBD5E1" text-anchor="start">scripts hors image</text>
+<text x="728.0" y="277.0" font-size="12.5" font-weight="400" fill="#CBD5E1" text-anchor="start">doc de version (VDD)</text>
+</svg>

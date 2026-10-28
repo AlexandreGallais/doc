@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="556" viewBox="0 0 960 556" role="img" aria-labelledby="t d">
+<title id="t">Un projet se lit en lignes ou en colonnes</title>
+<desc id="d">Grille des composants par CSCI. Une ligne regroupe un type de contenu pour tous les CSCI ; une colonne regroupe tout ce que livre un CSCI. Le socle couvre plusieurs colonnes.</desc>
+<style>text{font-family:-apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, sans-serif;}.m{font-family:ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, 'Liberation Mono', monospace;}</style>
+<defs><marker id="arr" viewBox="0 0 10 10" refX="10" refY="5" markerUnits="userSpaceOnUse" markerWidth="9" markerHeight="9" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#64748B"/></marker></defs>
+<rect x="0.5" y="0.5" width="959" height="555" rx="14" fill="#FFFFFF" stroke="#E2E8F0"/>
+<text x="32.0" y="44.0" font-size="19" font-weight="700" fill="#0F172A" text-anchor="start">Un projet se lit en lignes ou en colonnes</text>
+<text x="32.0" y="68.0" font-size="13.5" font-weight="400" fill="#475569" text-anchor="start">Une ligne regroupe un type de contenu ; une colonne regroupe tout ce que livre un CSCI.</text>
+<rect x="480.0" y="98.0" width="219.0" height="340.0" rx="12" fill="#1E293B" fill-opacity="0.07"/>
+<rect x="32.0" y="340.0" width="895.0" height="44.0" rx="10" fill="#1E293B" fill-opacity="0.07"/>
+<path d="M477 146 V434" fill="none" stroke="#E2E8F0" stroke-width="1" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="3 4"/>
+<path d="M702 146 V434" fill="none" stroke="#E2E8F0" stroke-width="1" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="3 4"/>
+<rect x="262.0" y="104.0" width="205.0" height="28.0" rx="14" fill="#F1F5F9" stroke="#CBD5E1" stroke-width="1"/>
+<text x="364.5" y="122.5" font-size="13" font-weight="700" fill="#0F172A" text-anchor="middle">CSCI A</text>
+<rect x="487.0" y="104.0" width="205.0" height="28.0" rx="14" fill="#1E293B"/>
+<text x="589.5" y="122.5" font-size="13" font-weight="700" fill="#FFFFFF" text-anchor="middle">CSCI B</text>
+<rect x="712.0" y="104.0" width="205.0" height="28.0" rx="14" fill="#F1F5F9" stroke="#CBD5E1" stroke-width="1"/>
+<text x="814.5" y="122.5" font-size="13" font-weight="700" fill="#0F172A" text-anchor="middle">CSCI C</text>
+<rect x="42.0" y="164.0" width="12.0" height="12.0" rx="3" fill="#E8F0FE" stroke="#3B6FD4" stroke-width="1.2"/>
+<text x="62.0" y="174.5" font-size="13.5" font-weight="600" fill="#0F172A" text-anchor="start">IHM</text>
+<rect x="42.0" y="212.0" width="12.0" height="12.0" rx="3" fill="#E8F0FE" stroke="#3B6FD4" stroke-width="1.2"/>
+<text x="62.0" y="222.5" font-size="13.5" font-weight="600" fill="#0F172A" text-anchor="start">Services</text>
+<rect x="42.0" y="260.0" width="12.0" height="12.0" rx="3" fill="#F1EBFE" stroke="#7A4FD6" stroke-width="1.2"/>
+<text x="62.0" y="270.5" font-size="13.5" font-weight="600" fill="#0F172A" text-anchor="start">Code spécifique</text>
+<rect x="42.0" y="308.0" width="12.0" height="12.0" rx="3" fill="#E1F5F1" stroke="#14968A" stroke-width="1.2"/>
+<text x="62.0" y="318.5" font-size="13.5" font-weight="600" fill="#0F172A" text-anchor="start">Extensions</text>
+<rect x="42.0" y="356.0" width="12.0" height="12.0" rx="3" fill="#FFF3DA" stroke="#D08A0E" stroke-width="1.2"/>
+<text x="62.0" y="366.5" font-size="13.5" font-weight="600" fill="#0F172A" text-anchor="start">Configuration</text>
+<rect x="42.0" y="404.0" width="12.0" height="12.0" rx="3" fill="#E4F5E8" stroke="#2E9A52" stroke-width="1.2"/>
+<text x="62.0" y="414.5" font-size="13.5" font-weight="600" fill="#0F172A" text-anchor="start">Livraison</text>
+<rect x="262.0" y="154.0" width="655.0" height="32.0" rx="6" fill="#E8F0FE" stroke="#3B6FD4" stroke-width="1.2"/>
+<text x="589.5" y="174.7" font-size="13" font-weight="600" fill="#1E3A8A" text-anchor="middle">IHM commune</text>
+<rect x="262.0" y="202.0" width="655.0" height="32.0" rx="6" fill="#E8F0FE" stroke="#3B6FD4" stroke-width="1.2"/>
+<text x="589.5" y="222.7" font-size="13" font-weight="600" fill="#1E3A8A" text-anchor="middle">services génériques</text>
+<rect x="487.0" y="250.0" width="205.0" height="32.0" rx="6" fill="#F1EBFE" stroke="#7A4FD6" stroke-width="1.2"/>
+<text x="589.5" y="270.7" font-size="13" font-weight="600" fill="#4C1D95" text-anchor="middle">service B</text>
+<rect x="712.0" y="298.0" width="205.0" height="32.0" rx="6" fill="#E1F5F1" stroke="#14968A" stroke-width="1.2"/>
+<text x="814.5" y="318.7" font-size="13" font-weight="600" fill="#115E59" text-anchor="middle">extension C</text>
+<rect x="262.0" y="346.0" width="205.0" height="32.0" rx="6" fill="#FFF3DA" stroke="#D08A0E" stroke-width="1.2"/>
+<text x="364.5" y="366.7" font-size="13" font-weight="600" fill="#7A4504" text-anchor="middle">conf A</text>
+<rect x="487.0" y="346.0" width="205.0" height="32.0" rx="6" fill="#FFF3DA" stroke="#D08A0E" stroke-width="1.2"/>
+<text x="589.5" y="366.7" font-size="13" font-weight="600" fill="#7A4504" text-anchor="middle">conf B</text>
+<rect x="712.0" y="346.0" width="205.0" height="32.0" rx="6" fill="#FFF3DA" stroke="#D08A0E" stroke-width="1.2"/>
+<text x="814.5" y="366.7" font-size="13" font-weight="600" fill="#7A4504" text-anchor="middle">conf C</text>
+<rect x="262.0" y="394.0" width="205.0" height="32.0" rx="6" fill="#E4F5E8" stroke="#2E9A52" stroke-width="1.2"/>
+<text x="364.5" y="414.7" font-size="13" font-weight="600" fill="#14532D" text-anchor="middle">livraison A</text>
+<rect x="487.0" y="394.0" width="205.0" height="32.0" rx="6" fill="#E4F5E8" stroke="#2E9A52" stroke-width="1.2"/>
+<text x="589.5" y="414.7" font-size="13" font-weight="600" fill="#14532D" text-anchor="middle">livraison B</text>
+<rect x="712.0" y="394.0" width="205.0" height="32.0" rx="6" fill="#E4F5E8" stroke="#2E9A52" stroke-width="1.2"/>
+<text x="814.5" y="414.7" font-size="13" font-weight="600" fill="#14532D" text-anchor="middle">livraison C</text>
+<rect x="32.0" y="464.0" width="28.0" height="12.0" rx="3" fill="#1E293B" fill-opacity="0.12"/>
+<text x="72.0" y="474.0" font-size="13" font-weight="400" fill="#0F172A" text-anchor="start">Bande horizontale : un type de contenu pour tous les CSCI. Lecture par composant (développeurs).</text>
+<rect x="40.0" y="486.0" width="12.0" height="20.0" rx="3" fill="#1E293B" fill-opacity="0.12"/>
+<text x="72.0" y="500.0" font-size="13" font-weight="400" fill="#0F172A" text-anchor="start">Bande verticale : tout ce que livre le CSCI B. Lecture par CSCI (ingénierie système, GC).</text>
+<text x="32.0" y="534.0" font-size="13.5" font-weight="700" fill="#0F172A" text-anchor="start">Le socle couvre plusieurs colonnes : il n'appartient à aucun CSCI, quelle que soit l'option.</text>
+</svg>

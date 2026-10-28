@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="512" viewBox="0 0 960 512" role="img" aria-labelledby="t d">
+<title id="t">A et B rangent le même contenu, autrement</title>
+<desc id="d">La même grille découpée deux fois. A regroupe par lignes : front, back, extensions, config, delivery. B met le socle dans shared et regroupe le reste par colonnes : csci-a, csci-b, csci-c.</desc>
+<style>text{font-family:-apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, sans-serif;}.m{font-family:ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, 'Liberation Mono', monospace;}</style>
+<defs><marker id="arr" viewBox="0 0 10 10" refX="10" refY="5" markerUnits="userSpaceOnUse" markerWidth="9" markerHeight="9" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#64748B"/></marker></defs>
+<rect x="0.5" y="0.5" width="959" height="511" rx="14" fill="#FFFFFF" stroke="#E2E8F0"/>
+<text x="32.0" y="44.0" font-size="19" font-weight="700" fill="#0F172A" text-anchor="start">A et B rangent le même contenu, autrement</text>
+<text x="32.0" y="68.0" font-size="13.5" font-weight="400" fill="#475569" text-anchor="start">A découpe la grille par lignes, B par colonnes. Le socle est rangé à part dans les deux cas.</text>
+<text x="32.0" y="104.0" font-size="15" font-weight="700" fill="#0F172A" text-anchor="start">A · par nature</text>
+<rect x="142.0" y="116.0" width="97.3" height="24.0" rx="12" fill="#F1F5F9" stroke="#CBD5E1" stroke-width="1"/>
+<text x="190.7" y="132.5" font-size="11.5" font-weight="700" fill="#0F172A" text-anchor="middle">CSCI A</text>
+<rect x="251.3" y="116.0" width="97.3" height="24.0" rx="12" fill="#F1F5F9" stroke="#CBD5E1" stroke-width="1"/>
+<text x="300.0" y="132.5" font-size="11.5" font-weight="700" fill="#0F172A" text-anchor="middle">CSCI B</text>
+<rect x="360.7" y="116.0" width="97.3" height="24.0" rx="12" fill="#F1F5F9" stroke="#CBD5E1" stroke-width="1"/>
+<text x="409.3" y="132.5" font-size="11.5" font-weight="700" fill="#0F172A" text-anchor="middle">CSCI C</text>
+<rect x="144.0" y="159.0" width="312.0" height="26.0" rx="6" fill="#E8F0FE" stroke="#3B6FD4" stroke-width="1.2"/>
+<text x="300.0" y="176.1" font-size="11.5" font-weight="600" fill="#1E3A8A" text-anchor="middle">IHM commune</text>
+<rect x="144.0" y="203.0" width="312.0" height="26.0" rx="6" fill="#E8F0FE" stroke="#3B6FD4" stroke-width="1.2"/>
+<text x="300.0" y="220.1" font-size="11.5" font-weight="600" fill="#1E3A8A" text-anchor="middle">services génériques</text>
+<rect x="253.3" y="247.0" width="93.3" height="26.0" rx="6" fill="#F1EBFE" stroke="#7A4FD6" stroke-width="1.2"/>
+<text x="300.0" y="264.1" font-size="11.5" font-weight="600" fill="#4C1D95" text-anchor="middle">service B</text>
+<rect x="362.7" y="291.0" width="93.3" height="26.0" rx="6" fill="#E1F5F1" stroke="#14968A" stroke-width="1.2"/>
+<text x="409.3" y="308.1" font-size="11.5" font-weight="600" fill="#115E59" text-anchor="middle">extension C</text>
+<rect x="144.0" y="335.0" width="93.3" height="26.0" rx="6" fill="#FFF3DA" stroke="#D08A0E" stroke-width="1.2"/>
+<text x="190.7" y="352.1" font-size="11.5" font-weight="600" fill="#7A4504" text-anchor="middle">conf A</text>
+<rect x="253.3" y="335.0" width="93.3" height="26.0" rx="6" fill="#FFF3DA" stroke="#D08A0E" stroke-width="1.2"/>
+<text x="300.0" y="352.1" font-size="11.5" font-weight="600" fill="#7A4504" text-anchor="middle">conf B</text>
+<rect x="362.7" y="335.0" width="93.3" height="26.0" rx="6" fill="#FFF3DA" stroke="#D08A0E" stroke-width="1.2"/>
+<text x="409.3" y="352.1" font-size="11.5" font-weight="600" fill="#7A4504" text-anchor="middle">conf C</text>
+<rect x="144.0" y="379.0" width="93.3" height="26.0" rx="6" fill="#E4F5E8" stroke="#2E9A52" stroke-width="1.2"/>
+<text x="190.7" y="396.1" font-size="11.5" font-weight="600" fill="#14532D" text-anchor="middle">livraison A</text>
+<rect x="253.3" y="379.0" width="93.3" height="26.0" rx="6" fill="#E4F5E8" stroke="#2E9A52" stroke-width="1.2"/>
+<text x="300.0" y="396.1" font-size="11.5" font-weight="600" fill="#14532D" text-anchor="middle">livraison B</text>
+<rect x="362.7" y="379.0" width="93.3" height="26.0" rx="6" fill="#E4F5E8" stroke="#2E9A52" stroke-width="1.2"/>
+<text x="409.3" y="396.1" font-size="11.5" font-weight="600" fill="#14532D" text-anchor="middle">livraison C</text>
+<rect x="32.0" y="152.0" width="432.0" height="40.0" rx="10" fill="none" stroke="#1E293B" stroke-width="1.3"/>
+<text x="44.0" y="176.5" font-size="12.5" font-weight="700" fill="#0F172A" text-anchor="start" class="m">front/</text>
+<rect x="32.0" y="196.0" width="432.0" height="84.0" rx="10" fill="none" stroke="#1E293B" stroke-width="1.3"/>
+<text x="44.0" y="242.5" font-size="12.5" font-weight="700" fill="#0F172A" text-anchor="start" class="m">back/</text>
+<rect x="32.0" y="284.0" width="432.0" height="40.0" rx="10" fill="none" stroke="#1E293B" stroke-width="1.3"/>
+<text x="44.0" y="308.5" font-size="12.5" font-weight="700" fill="#0F172A" text-anchor="start" class="m">extensions/</text>
+<rect x="32.0" y="328.0" width="432.0" height="40.0" rx="10" fill="none" stroke="#1E293B" stroke-width="1.3"/>
+<text x="44.0" y="352.5" font-size="12.5" font-weight="700" fill="#0F172A" text-anchor="start" class="m">config/</text>
+<rect x="32.0" y="372.0" width="432.0" height="40.0" rx="10" fill="none" stroke="#1E293B" stroke-width="1.3"/>
+<text x="44.0" y="396.5" font-size="12.5" font-weight="700" fill="#0F172A" text-anchor="start" class="m">delivery/</text>
+<text x="496.0" y="104.0" font-size="15" font-weight="700" fill="#0F172A" text-anchor="start">B · par CSCI</text>
+<rect x="606.0" y="116.0" width="97.3" height="24.0" rx="12" fill="#F1F5F9" stroke="#CBD5E1" stroke-width="1"/>
+<text x="654.7" y="132.5" font-size="11.5" font-weight="700" fill="#0F172A" text-anchor="middle">CSCI A</text>
+<rect x="715.3" y="116.0" width="97.3" height="24.0" rx="12" fill="#F1F5F9" stroke="#CBD5E1" stroke-width="1"/>
+<text x="764.0" y="132.5" font-size="11.5" font-weight="700" fill="#0F172A" text-anchor="middle">CSCI B</text>
+<rect x="824.7" y="116.0" width="97.3" height="24.0" rx="12" fill="#F1F5F9" stroke="#CBD5E1" stroke-width="1"/>
+<text x="873.3" y="132.5" font-size="11.5" font-weight="700" fill="#0F172A" text-anchor="middle">CSCI C</text>
+<rect x="608.0" y="159.0" width="312.0" height="26.0" rx="6" fill="#E8F0FE" stroke="#3B6FD4" stroke-width="1.2"/>
+<text x="764.0" y="176.1" font-size="11.5" font-weight="600" fill="#1E3A8A" text-anchor="middle">IHM commune</text>
+<rect x="608.0" y="203.0" width="312.0" height="26.0" rx="6" fill="#E8F0FE" stroke="#3B6FD4" stroke-width="1.2"/>
+<text x="764.0" y="220.1" font-size="11.5" font-weight="600" fill="#1E3A8A" text-anchor="middle">services génériques</text>
+<rect x="717.3" y="247.0" width="93.3" height="26.0" rx="6" fill="#F1EBFE" stroke="#7A4FD6" stroke-width="1.2"/>
+<text x="764.0" y="264.1" font-size="11.5" font-weight="600" fill="#4C1D95" text-anchor="middle">service B</text>
+<rect x="826.7" y="291.0" width="93.3" height="26.0" rx="6" fill="#E1F5F1" stroke="#14968A" stroke-width="1.2"/>
+<text x="873.3" y="308.1" font-size="11.5" font-weight="600" fill="#115E59" text-anchor="middle">extension C</text>
+<rect x="608.0" y="335.0" width="93.3" height="26.0" rx="6" fill="#FFF3DA" stroke="#D08A0E" stroke-width="1.2"/>
+<text x="654.7" y="352.1" font-size="11.5" font-weight="600" fill="#7A4504" text-anchor="middle">conf A</text>
+<rect x="717.3" y="335.0" width="93.3" height="26.0" rx="6" fill="#FFF3DA" stroke="#D08A0E" stroke-width="1.2"/>
+<text x="764.0" y="352.1" font-size="11.5" font-weight="600" fill="#7A4504" text-anchor="middle">conf B</text>
+<rect x="826.7" y="335.0" width="93.3" height="26.0" rx="6" fill="#FFF3DA" stroke="#D08A0E" stroke-width="1.2"/>
+<text x="873.3" y="352.1" font-size="11.5" font-weight="600" fill="#7A4504" text-anchor="middle">conf C</text>
+<rect x="608.0" y="379.0" width="93.3" height="26.0" rx="6" fill="#E4F5E8" stroke="#2E9A52" stroke-width="1.2"/>
+<text x="654.7" y="396.1" font-size="11.5" font-weight="600" fill="#14532D" text-anchor="middle">livraison A</text>
+<rect x="717.3" y="379.0" width="93.3" height="26.0" rx="6" fill="#E4F5E8" stroke="#2E9A52" stroke-width="1.2"/>
+<text x="764.0" y="396.1" font-size="11.5" font-weight="600" fill="#14532D" text-anchor="middle">livraison B</text>
+<rect x="826.7" y="379.0" width="93.3" height="26.0" rx="6" fill="#E4F5E8" stroke="#2E9A52" stroke-width="1.2"/>
+<text x="873.3" y="396.1" font-size="11.5" font-weight="600" fill="#14532D" text-anchor="middle">livraison C</text>
+<rect x="496.0" y="152.0" width="432.0" height="84.0" rx="10" fill="none" stroke="#1E293B" stroke-width="1.3"/>
+<text x="508.0" y="198.5" font-size="12.5" font-weight="700" fill="#0F172A" text-anchor="start" class="m">shared/</text>
+<rect x="603.0" y="240.0" width="103.3" height="172.0" rx="10" fill="none" stroke="#1E293B" stroke-width="1.3"/>
+<text x="654.7" y="432.0" font-size="12.5" font-weight="700" fill="#0F172A" text-anchor="middle" class="m">csci-a/</text>
+<rect x="712.3" y="240.0" width="103.3" height="172.0" rx="10" fill="none" stroke="#1E293B" stroke-width="1.3"/>
+<text x="764.0" y="432.0" font-size="12.5" font-weight="700" fill="#0F172A" text-anchor="middle" class="m">csci-b/</text>
+<rect x="821.7" y="240.0" width="103.3" height="172.0" rx="10" fill="none" stroke="#1E293B" stroke-width="1.3"/>
+<text x="873.3" y="432.0" font-size="12.5" font-weight="700" fill="#0F172A" text-anchor="middle" class="m">csci-c/</text>
+<text x="32.0" y="472.0" font-size="13" font-weight="400" fill="#0F172A" text-anchor="start">Le socle couvre plusieurs colonnes : il est rangé à part dans les deux options (front/ et back/ en A, shared/ en B).</text>
+<text x="32.0" y="496.0" font-size="13.5" font-weight="700" fill="#0F172A" text-anchor="start">Seules les cases propres à un CSCI changent de groupe : rangées par type en A, par CSCI en B.</text>
+</svg>
