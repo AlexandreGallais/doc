@@ -1,116 +1,330 @@
-#!/usr/bin/env bash
-# Release candidate (RC) :
-#   1. calcule le prochain numéro de RC d'après ce qui existe déjà sur Nexus
-#   2. zippe le CONTENU de dist/<projet> (pas le dossier lui-même)
-#   3. upload le zip dans un dépôt raw Nexus
-#
-# Variables d'entrée :
-#   NEXUS_URL        ex : https://nexus.intra                      (obligatoire)
-#   NEXUS_REPO       dépôt raw hosted, ex : raw-releases           (obligatoire)
-#   NEXUS_TOKEN      "utilisateur:motdepasse" encodé en base64     (obligatoire)
-#   PROJECT_NAME     nom du projet Angular (défaut : $CI_PROJECT_NAME)
-#   DIST_DIR         dossier à zipper (défaut : dist/$PROJECT_NAME)
-#   RELEASE_VERSION  version cible X.Y.Z (défaut : "version" du package.json)
-#   DRY_RUN          "true" = calcule et zippe, sans upload
-#
-# Arborescence Nexus : <NEXUS_REPO>/<projet>/<version>/<projet>-<version>-rc.<N>.zip
-# Sortie : release.env (dotenv GitLab) avec RELEASE_VERSION, RC_NUMBER,
-#          RC_VERSION, ZIP_NAME, NEXUS_ARTIFACT_URL
+/**
+ * Release candidate (RC) :
+ *   1. calcule le prochain numéro de RC d'après ce qui existe déjà sur Nexus
+ *   2. zippe le CONTENU de dist/<projet> (pas le dossier lui-même)
+ *   3. upload le zip dans un dépôt raw Nexus
+ *
+ * Aucune dépendance : modules intégrés de Node uniquement (fetch, zlib, fs).
+ * Lancement : node ci/release-rc.mts   (Node >= 22.18, TypeScript exécuté nativement)
+ *
+ * Variables d'environnement :
+ *   NEXUS_URL        ex : https://nexus.intra                      (obligatoire)
+ *   NEXUS_REPO       dépôt raw hosted, ex : raw-releases           (obligatoire)
+ *   NEXUS_TOKEN      "utilisateur:motdepasse" encodé en base64     (obligatoire)
+ *   PROJECT_NAME     nom du projet Angular (défaut : CI_PROJECT_NAME)
+ *   DIST_DIR         dossier à zipper (défaut : dist/<PROJECT_NAME>)
+ *   RELEASE_VERSION  version cible X.Y.Z (défaut : "version" du package.json)
+ *   DRY_RUN          "true" = calcule et zippe, sans upload
+ *
+ * Arborescence Nexus : <NEXUS_REPO>/<projet>/<version>/<projet>-<version>-rc.<N>.zip
+ * Sortie : release.env (dotenv GitLab) avec RELEASE_VERSION, RC_NUMBER,
+ *          RC_VERSION, ZIP_NAME, NEXUS_ARTIFACT_URL
+ */
 
-set -euo pipefail
-shopt -s inherit_errexit
+import { existsSync, readdirSync, readFileSync, statSync, writeFileSync } from 'node:fs';
+import { join, resolve } from 'node:path';
+import { deflateRawSync } from 'node:zlib';
 
-fail() { echo "ERREUR : $*" >&2; exit 1; }
+class ReleaseError extends Error {}
 
-# --- Paramètres --------------------------------------------------------------
-: "${NEXUS_URL:?NEXUS_URL manquant}"
-: "${NEXUS_REPO:?NEXUS_REPO manquant}"
-: "${NEXUS_TOKEN:?NEXUS_TOKEN manquant}"
-NEXUS_URL="${NEXUS_URL%/}"
+// --- Configuration ------------------------------------------------------------
 
-PROJECT_NAME="${PROJECT_NAME:-${CI_PROJECT_NAME:-}}"
-[ -n "$PROJECT_NAME" ] || fail "PROJECT_NAME manquant"
-DIST_DIR="${DIST_DIR:-dist/${PROJECT_NAME}}"
-DRY_RUN="${DRY_RUN:-false}"
-
-VERSION="${RELEASE_VERSION:-$(npm pkg get version | tr -d '"')}"
-[[ "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] \
-  || fail "version invalide : '${VERSION}' (attendu X.Y.Z)"
-
-AUTH_HEADER="Authorization: Basic ${NEXUS_TOKEN}"
-NEXUS_DIR="${PROJECT_NAME}/${VERSION}"
-
-# --- 1. RC déjà publiées pour cette version ----------------------------------
-# API de recherche Nexus, filtrée sur le dossier <projet>/<version>.
-# Pour un dépôt raw, "group" = le dossier, avec un "/" en tête.
-list_existing_paths() {
-  local token="" response
-  local -a params
-  while :; do
-    params=(--data-urlencode "repository=${NEXUS_REPO}"
-            --data-urlencode "group=/${NEXUS_DIR}")
-    if [ -n "$token" ]; then
-      params+=(--data-urlencode "continuationToken=${token}")
-    fi
-
-    response="$(curl -sS --fail -G -H "$AUTH_HEADER" "${params[@]}" \
-      "${NEXUS_URL}/service/rest/v1/search/assets")" \
-      || fail "recherche Nexus impossible"
-    grep -q '"items"' <<<"$response" \
-      || fail "réponse Nexus inattendue (page de login ? mauvaise URL ?)"
-
-    # Extraction des "path" sans jq (absent de certaines images)
-    grep -oE '"path"[[:space:]]*:[[:space:]]*"[^"]*"' <<<"$response" \
-      | sed -E 's/.*"([^"]*)"$/\1/' || true
-
-    # Pagination : Nexus renvoie un continuationToken tant qu'il reste des pages
-    token="$(sed -nE 's/.*"continuationToken"[[:space:]]*:[[:space:]]*"([^"]+)".*/\1/p' \
-      <<<"$response")"
-    if [ -z "$token" ]; then break; fi
-  done
+interface ReleaseConfig {
+  nexusUrl: string;
+  nexusRepo: string;
+  nexusToken: string;
+  projectName: string;
+  distDir: string;
+  version: string;
+  dryRun: boolean;
 }
 
-EXISTING_PATHS="$(list_existing_paths)"
+function requireEnv(name: string): string {
+  const value = process.env[name]?.trim();
+  if (!value) {
+    throw new ReleaseError(`variable ${name} manquante`);
+  }
+  return value;
+}
 
-# Plus haut numéro de RC existant (et non leur nombre : une RC supprimée
-# provoquerait sinon une collision de nom)
-LAST_RC="$(printf '%s\n' "$EXISTING_PATHS" \
-  | sed -nE 's/.*-rc\.([0-9]+)\.zip$/\1/p' | sort -n | tail -n 1)"
-RC_NUMBER=$(( 10#${LAST_RC:-0} + 1 ))
+function readPackageVersion(): string {
+  const pkg = JSON.parse(readFileSync('package.json', 'utf8')) as { version?: unknown };
+  return typeof pkg.version === 'string' ? pkg.version : '';
+}
 
-RC_VERSION="${VERSION}-rc.${RC_NUMBER}"
-ZIP_NAME="${PROJECT_NAME}-${RC_VERSION}.zip"
-ARTIFACT_URL="${NEXUS_URL}/repository/${NEXUS_REPO}/${NEXUS_DIR}/${ZIP_NAME}"
+function loadConfig(): ReleaseConfig {
+  const projectName = process.env['PROJECT_NAME'] || process.env['CI_PROJECT_NAME'] || '';
+  if (!projectName) {
+    throw new ReleaseError('variable PROJECT_NAME manquante');
+  }
 
-echo "Version cible     : ${VERSION}"
-echo "Dernière RC Nexus : ${LAST_RC:-aucune}"
-echo "Nouvelle RC       : ${RC_VERSION}"
-echo "Fichier           : ${ZIP_NAME}"
+  const version = process.env['RELEASE_VERSION'] || readPackageVersion();
+  if (!/^\d+\.\d+\.\d+$/.test(version)) {
+    throw new ReleaseError(`version invalide : '${version}' (attendu X.Y.Z)`);
+  }
 
-# --- 2. Zip du contenu de dist/<projet> --------------------------------------
-[ -d "$DIST_DIR" ] || fail "dossier introuvable : ${DIST_DIR} (artefact du build manquant ?)"
-[ -n "$(ls -A "$DIST_DIR")" ] || fail "dossier vide : ${DIST_DIR}"
+  return {
+    nexusUrl: requireEnv('NEXUS_URL').replace(/\/+$/, ''),
+    nexusRepo: requireEnv('NEXUS_REPO'),
+    nexusToken: requireEnv('NEXUS_TOKEN'),
+    projectName,
+    distDir: process.env['DIST_DIR'] || join('dist', projectName),
+    version,
+    dryRun: process.env['DRY_RUN'] === 'true',
+  };
+}
 
-ZIP_PATH="${PWD}/${ZIP_NAME}"
-rm -f "$ZIP_PATH"
-# cd dans le dossier : le zip contient les fichiers à la racine,
-# sans le dossier <projet> autour
-( cd "$DIST_DIR" && zip -rq "$ZIP_PATH" . )
+// --- 1. RC déjà publiées sur Nexus ---------------------------------------------
 
-# --- 3. Upload Nexus ---------------------------------------------------------
-if [ "$DRY_RUN" = "true" ]; then
-  echo "DRY_RUN : upload ignoré (${ARTIFACT_URL})"
-else
-  curl -sS --fail -H "$AUTH_HEADER" --upload-file "$ZIP_PATH" "$ARTIFACT_URL" \
-    || fail "upload Nexus échoué : ${ARTIFACT_URL}"
-  echo "Upload OK : ${ARTIFACT_URL}"
-fi
+interface NexusSearchPage {
+  items: { path: string }[];
+  continuationToken: string | null;
+}
 
-# --- Sortie pour les jobs suivants (dotenv GitLab) ---------------------------
-cat > release.env <<EOF
-RELEASE_VERSION=${VERSION}
-RC_NUMBER=${RC_NUMBER}
-RC_VERSION=${RC_VERSION}
-ZIP_NAME=${ZIP_NAME}
-NEXUS_ARTIFACT_URL=${ARTIFACT_URL}
-EOF
+function authHeaders(config: ReleaseConfig): Record<string, string> {
+  return { Authorization: `Basic ${config.nexusToken}` };
+}
+
+/**
+ * Liste les fichiers du dossier <projet>/<version>/ via l'API de recherche Nexus.
+ * Pour un dépôt raw, "group" = le dossier, avec un "/" en tête.
+ */
+async function listExistingPaths(config: ReleaseConfig): Promise<string[]> {
+  const paths: string[] = [];
+  let continuationToken: string | null = null;
+
+  do {
+    const url = new URL(`${config.nexusUrl}/service/rest/v1/search/assets`);
+    url.searchParams.set('repository', config.nexusRepo);
+    url.searchParams.set('group', `/${config.projectName}/${config.version}`);
+    if (continuationToken) {
+      url.searchParams.set('continuationToken', continuationToken);
+    }
+
+    const response = await fetch(url, {
+      headers: { ...authHeaders(config), Accept: 'application/json' },
+    });
+    if (!response.ok) {
+      throw new ReleaseError(`recherche Nexus : HTTP ${response.status}`);
+    }
+
+    const page = parseSearchPage(await response.text());
+    paths.push(...page.items.map((item) => item.path));
+    continuationToken = page.continuationToken;
+  } while (continuationToken);
+
+  return paths;
+}
+
+function parseSearchPage(body: string): NexusSearchPage {
+  let page: Partial<NexusSearchPage>;
+  try {
+    page = JSON.parse(body) as Partial<NexusSearchPage>;
+  } catch {
+    throw new ReleaseError('réponse Nexus non JSON (page de login ? mauvaise URL ?)');
+  }
+  if (!Array.isArray(page.items)) {
+    throw new ReleaseError('réponse Nexus inattendue : champ "items" absent');
+  }
+  return { items: page.items, continuationToken: page.continuationToken ?? null };
+}
+
+const RC_PATTERN = /-rc\.(\d+)\.zip$/;
+
+/**
+ * Plus haut numéro de RC existant + 1 (et non le nombre de RC :
+ * une RC supprimée provoquerait sinon une collision de nom).
+ */
+function nextRcNumber(existingPaths: string[]): { last: number | null; next: number } {
+  const numbers = existingPaths
+    .map((path) => RC_PATTERN.exec(path)?.[1])
+    .filter((value): value is string => value !== undefined)
+    .map(Number);
+  const last = numbers.length > 0 ? Math.max(...numbers) : null;
+  return { last, next: (last ?? 0) + 1 };
+}
+
+// --- 2. Zip (format ZIP standard, sans dépendance) -----------------------------
+
+interface ZipSource {
+  /** Chemin dans l'archive, séparateur "/" */
+  name: string;
+  absolutePath: string;
+}
+
+/** Liste récursive des fichiers, chemins relatifs à la racine du dossier. */
+function collectFiles(root: string, prefix = ''): ZipSource[] {
+  return readdirSync(join(root, prefix), { withFileTypes: true })
+    .sort((a, b) => a.name.localeCompare(b.name))
+    .flatMap((entry) => {
+      const name = prefix ? `${prefix}/${entry.name}` : entry.name;
+      if (entry.isDirectory()) return collectFiles(root, name);
+      if (entry.isFile()) return [{ name, absolutePath: join(root, name) }];
+      return [];
+    });
+}
+
+const CRC_TABLE = Array.from({ length: 256 }, (_, n) => {
+  let c = n;
+  for (let k = 0; k < 8; k++) c = c & 1 ? 0xedb88320 ^ (c >>> 1) : c >>> 1;
+  return c >>> 0;
+});
+
+function crc32(data: Buffer): number {
+  let crc = 0xffffffff;
+  for (const byte of data) crc = CRC_TABLE[(crc ^ byte) & 0xff]! ^ (crc >>> 8);
+  return (crc ^ 0xffffffff) >>> 0;
+}
+
+/** Date au format DOS utilisé par le ZIP. */
+function dosDateTime(date: Date): { time: number; date: number } {
+  return {
+    time: (date.getHours() << 11) | (date.getMinutes() << 5) | Math.floor(date.getSeconds() / 2),
+    date: ((date.getFullYear() - 1980) << 9) | ((date.getMonth() + 1) << 5) | date.getDate(),
+  };
+}
+
+/**
+ * Construit une archive ZIP (deflate) en mémoire.
+ * Limites du format ZIP sans ZIP64 : 65 535 fichiers, 4 Gio.
+ */
+function createZip(files: ZipSource[]): Buffer {
+  const UTF8_FLAG = 0x0800;
+  const DEFLATE = 8;
+  const localParts: Buffer[] = [];
+  const centralParts: Buffer[] = [];
+  let offset = 0;
+
+  for (const file of files) {
+    const raw = readFileSync(file.absolutePath);
+    const compressed = deflateRawSync(raw);
+    const name = Buffer.from(file.name, 'utf8');
+    const crc = crc32(raw);
+    const dos = dosDateTime(statSync(file.absolutePath).mtime);
+
+    const local = Buffer.alloc(30);
+    local.writeUInt32LE(0x04034b50, 0); // signature
+    local.writeUInt16LE(20, 4); // version requise
+    local.writeUInt16LE(UTF8_FLAG, 6);
+    local.writeUInt16LE(DEFLATE, 8);
+    local.writeUInt16LE(dos.time, 10);
+    local.writeUInt16LE(dos.date, 12);
+    local.writeUInt32LE(crc, 14);
+    local.writeUInt32LE(compressed.length, 18);
+    local.writeUInt32LE(raw.length, 22);
+    local.writeUInt16LE(name.length, 26);
+    local.writeUInt16LE(0, 28); // extra
+
+    const central = Buffer.alloc(46);
+    central.writeUInt32LE(0x02014b50, 0); // signature
+    central.writeUInt16LE(0x0314, 4); // créé par : Unix, v2.0
+    central.writeUInt16LE(20, 6); // version requise
+    central.writeUInt16LE(UTF8_FLAG, 8);
+    central.writeUInt16LE(DEFLATE, 10);
+    central.writeUInt16LE(dos.time, 12);
+    central.writeUInt16LE(dos.date, 14);
+    central.writeUInt32LE(crc, 16);
+    central.writeUInt32LE(compressed.length, 20);
+    central.writeUInt32LE(raw.length, 24);
+    central.writeUInt16LE(name.length, 28);
+    // 30-37 : extra, commentaire, disque, attributs internes = 0
+    central.writeUInt32LE((0o100644 << 16) >>> 0, 38); // droits rw-r--r--
+    central.writeUInt32LE(offset, 42); // position de l'en-tête local
+
+    localParts.push(local, name, compressed);
+    centralParts.push(central, name);
+    offset += local.length + name.length + compressed.length;
+  }
+
+  const centralDirectory = Buffer.concat(centralParts);
+  if (files.length > 0xffff || offset + centralDirectory.length > 0xffffffff) {
+    throw new ReleaseError('archive trop volumineuse pour le format ZIP sans ZIP64');
+  }
+
+  const end = Buffer.alloc(22);
+  end.writeUInt32LE(0x06054b50, 0); // signature
+  end.writeUInt16LE(files.length, 8); // entrées sur ce disque
+  end.writeUInt16LE(files.length, 10); // entrées au total
+  end.writeUInt32LE(centralDirectory.length, 12);
+  end.writeUInt32LE(offset, 16); // position du répertoire central
+
+  return Buffer.concat([...localParts, centralDirectory, end]);
+}
+
+// --- 3. Upload Nexus -----------------------------------------------------------
+
+async function upload(config: ReleaseConfig, url: string, zip: Buffer): Promise<void> {
+  const response = await fetch(url, {
+    method: 'PUT',
+    headers: { ...authHeaders(config), 'Content-Type': 'application/zip' },
+    body: new Uint8Array(zip),
+  });
+  if (!response.ok) {
+    const detail = (await response.text()).slice(0, 300);
+    throw new ReleaseError(`upload Nexus : HTTP ${response.status} ${detail}`.trim());
+  }
+}
+
+// --- Main ----------------------------------------------------------------------
+
+async function main(): Promise<void> {
+  const config = loadConfig();
+
+  const { last, next } = nextRcNumber(await listExistingPaths(config));
+  const rcVersion = `${config.version}-rc.${next}`;
+  const zipName = `${config.projectName}-${rcVersion}.zip`;
+  const artifactUrl =
+    `${config.nexusUrl}/repository/${config.nexusRepo}/` +
+    `${config.projectName}/${config.version}/${zipName}`;
+
+  console.log(`Version cible     : ${config.version}`);
+  console.log(`Dernière RC Nexus : ${last ?? 'aucune'}`);
+  console.log(`Nouvelle RC       : ${rcVersion}`);
+  console.log(`Fichier           : ${zipName}`);
+
+  if (!existsSync(config.distDir) || !statSync(config.distDir).isDirectory()) {
+    throw new ReleaseError(`dossier introuvable : ${config.distDir} (artefact du build manquant ?)`);
+  }
+  const files = collectFiles(config.distDir);
+  if (files.length === 0) {
+    throw new ReleaseError(`dossier vide : ${config.distDir}`);
+  }
+
+  const zip = createZip(files);
+  writeFileSync(resolve(zipName), zip);
+  console.log(`Zip               : ${files.length} fichiers, ${(zip.length / 1024).toFixed(0)} Kio`);
+
+  if (config.dryRun) {
+    console.log(`DRY_RUN : upload ignoré (${artifactUrl})`);
+  } else {
+    await upload(config, artifactUrl, zip);
+    console.log(`Upload OK : ${artifactUrl}`);
+  }
+
+  writeFileSync(
+    'release.env',
+    [
+      `RELEASE_VERSION=${config.version}`,
+      `RC_NUMBER=${next}`,
+      `RC_VERSION=${rcVersion}`,
+      `ZIP_NAME=${zipName}`,
+      `NEXUS_ARTIFACT_URL=${artifactUrl}`,
+      '',
+    ].join('\n'),
+  );
+}
+
+/** Message lisible, avec la cause réseau réelle (certificat, DNS...) masquée par fetch. */
+function describeError(error: unknown): string {
+  if (error instanceof ReleaseError) return error.message;
+  if (error instanceof Error) {
+    const cause = error.cause instanceof Error ? ` (${error.cause.message})` : '';
+    return `${error.message}${cause}`;
+  }
+  return String(error);
+}
+
+main().catch((error: unknown) => {
+  console.error(`ERREUR : ${describeError(error)}`);
+  process.exit(1);
+});
