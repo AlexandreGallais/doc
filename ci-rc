@@ -1,0 +1,116 @@
+#!/usr/bin/env bash
+# Release candidate (RC) :
+#   1. calcule le prochain numéro de RC d'après ce qui existe déjà sur Nexus
+#   2. zippe le CONTENU de dist/<projet> (pas le dossier lui-même)
+#   3. upload le zip dans un dépôt raw Nexus
+#
+# Variables d'entrée :
+#   NEXUS_URL        ex : https://nexus.intra                      (obligatoire)
+#   NEXUS_REPO       dépôt raw hosted, ex : raw-releases           (obligatoire)
+#   NEXUS_TOKEN      "utilisateur:motdepasse" encodé en base64     (obligatoire)
+#   PROJECT_NAME     nom du projet Angular (défaut : $CI_PROJECT_NAME)
+#   DIST_DIR         dossier à zipper (défaut : dist/$PROJECT_NAME)
+#   RELEASE_VERSION  version cible X.Y.Z (défaut : "version" du package.json)
+#   DRY_RUN          "true" = calcule et zippe, sans upload
+#
+# Arborescence Nexus : <NEXUS_REPO>/<projet>/<version>/<projet>-<version>-rc.<N>.zip
+# Sortie : release.env (dotenv GitLab) avec RELEASE_VERSION, RC_NUMBER,
+#          RC_VERSION, ZIP_NAME, NEXUS_ARTIFACT_URL
+
+set -euo pipefail
+shopt -s inherit_errexit
+
+fail() { echo "ERREUR : $*" >&2; exit 1; }
+
+# --- Paramètres --------------------------------------------------------------
+: "${NEXUS_URL:?NEXUS_URL manquant}"
+: "${NEXUS_REPO:?NEXUS_REPO manquant}"
+: "${NEXUS_TOKEN:?NEXUS_TOKEN manquant}"
+NEXUS_URL="${NEXUS_URL%/}"
+
+PROJECT_NAME="${PROJECT_NAME:-${CI_PROJECT_NAME:-}}"
+[ -n "$PROJECT_NAME" ] || fail "PROJECT_NAME manquant"
+DIST_DIR="${DIST_DIR:-dist/${PROJECT_NAME}}"
+DRY_RUN="${DRY_RUN:-false}"
+
+VERSION="${RELEASE_VERSION:-$(npm pkg get version | tr -d '"')}"
+[[ "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] \
+  || fail "version invalide : '${VERSION}' (attendu X.Y.Z)"
+
+AUTH_HEADER="Authorization: Basic ${NEXUS_TOKEN}"
+NEXUS_DIR="${PROJECT_NAME}/${VERSION}"
+
+# --- 1. RC déjà publiées pour cette version ----------------------------------
+# API de recherche Nexus, filtrée sur le dossier <projet>/<version>.
+# Pour un dépôt raw, "group" = le dossier, avec un "/" en tête.
+list_existing_paths() {
+  local token="" response
+  local -a params
+  while :; do
+    params=(--data-urlencode "repository=${NEXUS_REPO}"
+            --data-urlencode "group=/${NEXUS_DIR}")
+    if [ -n "$token" ]; then
+      params+=(--data-urlencode "continuationToken=${token}")
+    fi
+
+    response="$(curl -sS --fail -G -H "$AUTH_HEADER" "${params[@]}" \
+      "${NEXUS_URL}/service/rest/v1/search/assets")" \
+      || fail "recherche Nexus impossible"
+    grep -q '"items"' <<<"$response" \
+      || fail "réponse Nexus inattendue (page de login ? mauvaise URL ?)"
+
+    # Extraction des "path" sans jq (absent de certaines images)
+    grep -oE '"path"[[:space:]]*:[[:space:]]*"[^"]*"' <<<"$response" \
+      | sed -E 's/.*"([^"]*)"$/\1/' || true
+
+    # Pagination : Nexus renvoie un continuationToken tant qu'il reste des pages
+    token="$(sed -nE 's/.*"continuationToken"[[:space:]]*:[[:space:]]*"([^"]+)".*/\1/p' \
+      <<<"$response")"
+    if [ -z "$token" ]; then break; fi
+  done
+}
+
+EXISTING_PATHS="$(list_existing_paths)"
+
+# Plus haut numéro de RC existant (et non leur nombre : une RC supprimée
+# provoquerait sinon une collision de nom)
+LAST_RC="$(printf '%s\n' "$EXISTING_PATHS" \
+  | sed -nE 's/.*-rc\.([0-9]+)\.zip$/\1/p' | sort -n | tail -n 1)"
+RC_NUMBER=$(( 10#${LAST_RC:-0} + 1 ))
+
+RC_VERSION="${VERSION}-rc.${RC_NUMBER}"
+ZIP_NAME="${PROJECT_NAME}-${RC_VERSION}.zip"
+ARTIFACT_URL="${NEXUS_URL}/repository/${NEXUS_REPO}/${NEXUS_DIR}/${ZIP_NAME}"
+
+echo "Version cible     : ${VERSION}"
+echo "Dernière RC Nexus : ${LAST_RC:-aucune}"
+echo "Nouvelle RC       : ${RC_VERSION}"
+echo "Fichier           : ${ZIP_NAME}"
+
+# --- 2. Zip du contenu de dist/<projet> --------------------------------------
+[ -d "$DIST_DIR" ] || fail "dossier introuvable : ${DIST_DIR} (artefact du build manquant ?)"
+[ -n "$(ls -A "$DIST_DIR")" ] || fail "dossier vide : ${DIST_DIR}"
+
+ZIP_PATH="${PWD}/${ZIP_NAME}"
+rm -f "$ZIP_PATH"
+# cd dans le dossier : le zip contient les fichiers à la racine,
+# sans le dossier <projet> autour
+( cd "$DIST_DIR" && zip -rq "$ZIP_PATH" . )
+
+# --- 3. Upload Nexus ---------------------------------------------------------
+if [ "$DRY_RUN" = "true" ]; then
+  echo "DRY_RUN : upload ignoré (${ARTIFACT_URL})"
+else
+  curl -sS --fail -H "$AUTH_HEADER" --upload-file "$ZIP_PATH" "$ARTIFACT_URL" \
+    || fail "upload Nexus échoué : ${ARTIFACT_URL}"
+  echo "Upload OK : ${ARTIFACT_URL}"
+fi
+
+# --- Sortie pour les jobs suivants (dotenv GitLab) ---------------------------
+cat > release.env <<EOF
+RELEASE_VERSION=${VERSION}
+RC_NUMBER=${RC_NUMBER}
+RC_VERSION=${RC_VERSION}
+ZIP_NAME=${ZIP_NAME}
+NEXUS_ARTIFACT_URL=${ARTIFACT_URL}
+EOF
