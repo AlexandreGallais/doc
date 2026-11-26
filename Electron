@@ -1,0 +1,554 @@
+# Electron + electron-builder en CI (Linux / Windows) derrière Nexus
+
+> Mis à jour le 25/11/2026 — périmètre : **Electron 45.3.0 → 45.5.0**, **electron-builder 26.x** (cible : 26.18.x).
+> Objectif : savoir **quelles images CI** utiliser, **quels paquets apt-get** installer, et **quels fichiers GitHub** demander dans Nexus.
+
+---
+
+## Sommaire
+
+1. [TL;DR](#1-tldr)
+2. [Versions Electron 45.3.0 → 45.5.0](#2-versions-electron-4530--4550)
+3. [Versions electron-builder 26.x](#3-versions-electron-builder-26x)
+4. [Fichiers GitHub à demander dans Nexus](#4-fichiers-github-à-demander-dans-nexus)
+5. [Images CI (officielles)](#5-images-ci-officielles)
+6. [Paquets apt-get (image `node:26`)](#6-paquets-apt-get-image-node26)
+7. [Dockerfiles prêts à l'emploi](#7-dockerfiles-prêts-à-lemploi)
+8. [Variables d'environnement (mirror Nexus)](#8-variables-denvironnement-mirror-nexus)
+9. [Exemple `.gitlab-ci.yml`](#9-exemple-gitlab-ciyml)
+10. [Tuto : trouver les dépendances d'une version](#10-tuto--trouver-les-dépendances-dune-version)
+11. [Points d'attention](#11-points-dattention)
+12. [Liste brute des URLs (copier-coller)](#12-liste-brute-des-urls-copier-coller)
+13. [Sources](#13-sources)
+
+---
+
+## 1. TL;DR
+
+| Besoin | Solution recommandée |
+|---|---|
+| Build **Linux** (AppImage, deb, rpm) | `node:26-trixie` + quelques paquets apt-get |
+| Build **Windows** (NSIS) **depuis Linux** | même image + **Wine** (apt-get) |
+| Build **Windows natif** | `mcr.microsoft.com/windows/servercore:ltsc2022` (ou `ltsc2025`) + Node 26 (zip nodejs.org) |
+| Alternative « clé en main » | `electronuserland/builder:24` / `:24-wine` (image officielle electron-builder, **Node 24**, pas de tag Node 26) |
+| electron-builder | **26.18.1** (dist-tag `v26`) ou **26.18.0** (dist-tag `latest`) |
+| Downloads GitHub | 2 dépôts à proxifier : `electron/electron` (binaires Electron) et `electron-userland/electron-builder-binaries` (toolsets) |
+| Variables CI | `ELECTRON_MIRROR` + `ELECTRON_BUILDER_BINARIES_MIRROR` → Nexus |
+
+---
+
+## 2. Versions Electron 45.3.0 → 45.5.0
+
+Toutes les versions **publiées** de la plage (7 au total) :
+
+| Version | Date | Chromium | Node (embarqué) | Release GitHub | Note |
+|---|---|---|---|---|---|
+| 45.3.0 | 10/11/2026 | 156.0.8078.96 | 24.22.2 | [v45.3.0](https://github.com/electron/electron/releases/tag/v45.3.0) | |
+| 45.3.1 | 11/11/2026 | 156.0.8078.96 | 24.22.2 | [v45.3.1](https://github.com/electron/electron/releases/tag/v45.3.1) | |
+| 45.3.2 | 12/11/2026 | 156.0.8078.100 | 24.22.2 | [v45.3.2](https://github.com/electron/electron/releases/tag/v45.3.2) | |
+| 45.3.3 | 14/11/2026 | 156.0.8078.100 | 24.22.3 | [v45.3.3](https://github.com/electron/electron/releases/tag/v45.3.3) | |
+| 45.3.4 | 17/11/2026 | 156.0.8078.100 | 24.22.3 | [v45.3.4](https://github.com/electron/electron/releases/tag/v45.3.4) | version actuelle au taf |
+| ~~45.4.0~~ | — | — | — | [v45.4.0](https://github.com/electron/electron/releases/tag/v45.4.0) | **tag sans binaires**, absente de releases.electronjs.org → ignorer |
+| 45.4.1 | 18/11/2026 | 156.0.8078.100 | 24.22.3 | [v45.4.1](https://github.com/electron/electron/releases/tag/v45.4.1) | |
+| 45.5.0 | 24/11/2026 | 156.0.8078.109 | 24.22.3 | [v45.5.0](https://github.com/electron/electron/releases/tag/v45.5.0) | `latest` sur npm |
+
+- Le package npm `electron@45.x` exige **Node ≥ 22.12.0** (`engines`).
+- Depuis Electron 44 : **plus de Windows ia32 ni Linux armv7l** → uniquement `x64` et `arm64`.
+
+---
+
+## 3. Versions electron-builder 26.x
+
+### 3.1 Dist-tags npm (25/11/2026)
+
+| Tag | Version |
+|---|---|
+| `latest` | 26.18.0 |
+| `v26` | 26.18.1 |
+| `next` | 27.0.0-alpha.15 (⚠️ v27 = breaking changes, voir §11) |
+
+### 3.2 Les 61 versions stables 26.x, par « ère » technique
+
+| Plage | Versions | Téléchargement des binaires | Impact CI |
+|---|---|---|---|
+| **A** 26.0.0 → 26.10.0 | 26.0.0–26.0.20, 26.1.0, 26.2.0, 26.3.0–26.3.6, 26.4.0, 26.4.1, 26.5.0, 26.6.0, 26.7.0, 26.8.0–26.8.2, 26.9.0, 26.9.1, 26.10.0 | `app-builder-bin` (binaire Go, npm) + `7zip-bin` (npm) | Édition de l'exe Windows via `rcedit.exe` → **Wine requis** pour tout build Windows sur Linux |
+| **B** 26.11.0 → 26.14.0 | 26.11.0, 26.11.1, 26.12.0, 26.12.1, 26.13.0, 26.13.1, 26.14.0 | idem A | Édition de l'exe via **`resedit`** (JS pur) → plus de Wine pour icône/version |
+| **C** 26.15.0 → 26.18.1 | 26.15.0–26.15.7, 26.16.0, 26.16.1, 26.17.0, 26.18.0, 26.18.1 | Téléchargeur interne « toolsets » ; **`app-builder-bin` et `7zip-bin` supprimés** → 7-Zip téléchargé depuis GitHub | Nouveau layout du cache (cache < 26.15 non relu) |
+
+### 3.3 Versions les plus utilisées (téléchargements npm, semaine précédant le 25/11/2026)
+
+| Rang | Version | Téléchargements/semaine | Ère |
+|---|---|---|---|
+| 1 | 26.18.0 | ~2,53 M | C |
+| 2 | 26.15.3 | ~2,33 M | C |
+| 3 | 26.17.0 | ~556 k | C |
+| 4 | 26.16.1 | ~551 k | C |
+| 5 | 26.18.1 | ~368 k | C |
+| 6 | 26.8.1 | ~364 k | A |
+| 7 | 26.15.2 | ~338 k | C |
+| 8 | 26.15.7 | ~207 k | C |
+| 9 | 26.0.1 | ~163 k | A |
+| 10 | 26.15.6 | ~131 k | C |
+
+**Recommandation** : se limiter à l'ère **C** (26.15.0 → 26.18.1). Le §4 couvre toute cette ère.
+
+---
+
+## 4. Fichiers GitHub à demander dans Nexus
+
+Deux sources GitHub :
+
+| Source | Base URL | Utilisé par |
+|---|---|---|
+| Binaires Electron | `https://github.com/electron/electron/releases/download/v<VERSION>/` | `@electron/get` (appelé par electron-builder) |
+| Toolsets electron-builder | `https://github.com/electron-userland/electron-builder-binaries/releases/download/<RELEASE>/` | electron-builder |
+
+> 💡 Si Nexus permet un dépôt **raw (proxy)** vers `https://github.com/`, toutes les versions sont servies à la demande, sans liste. Sinon, demander les fichiers ci-dessous. Les downloads GitHub redirigent vers un domaine de stockage GitHub (`*.githubusercontent.com`) : à autoriser côté proxy.
+
+### 4.1 Electron — par version
+
+Pour chaque version : 1 zip par plateforme cible + `SHASUMS256.txt` (electron-builder vérifie les checksums avec ce fichier, re-téléchargé à chaque build sauf seed local).
+
+| Version | Linux x64 | Windows x64 | Checksums |
+|---|---|---|---|
+| 45.3.0 | [electron-v45.3.0-linux-x64.zip](https://github.com/electron/electron/releases/download/v45.3.0/electron-v45.3.0-linux-x64.zip) | [electron-v45.3.0-win32-x64.zip](https://github.com/electron/electron/releases/download/v45.3.0/electron-v45.3.0-win32-x64.zip) | [SHASUMS256.txt](https://github.com/electron/electron/releases/download/v45.3.0/SHASUMS256.txt) |
+| 45.3.1 | [electron-v45.3.1-linux-x64.zip](https://github.com/electron/electron/releases/download/v45.3.1/electron-v45.3.1-linux-x64.zip) | [electron-v45.3.1-win32-x64.zip](https://github.com/electron/electron/releases/download/v45.3.1/electron-v45.3.1-win32-x64.zip) | [SHASUMS256.txt](https://github.com/electron/electron/releases/download/v45.3.1/SHASUMS256.txt) |
+| 45.3.2 | [electron-v45.3.2-linux-x64.zip](https://github.com/electron/electron/releases/download/v45.3.2/electron-v45.3.2-linux-x64.zip) | [electron-v45.3.2-win32-x64.zip](https://github.com/electron/electron/releases/download/v45.3.2/electron-v45.3.2-win32-x64.zip) | [SHASUMS256.txt](https://github.com/electron/electron/releases/download/v45.3.2/SHASUMS256.txt) |
+| 45.3.3 | [electron-v45.3.3-linux-x64.zip](https://github.com/electron/electron/releases/download/v45.3.3/electron-v45.3.3-linux-x64.zip) | [electron-v45.3.3-win32-x64.zip](https://github.com/electron/electron/releases/download/v45.3.3/electron-v45.3.3-win32-x64.zip) | [SHASUMS256.txt](https://github.com/electron/electron/releases/download/v45.3.3/SHASUMS256.txt) |
+| 45.3.4 | [electron-v45.3.4-linux-x64.zip](https://github.com/electron/electron/releases/download/v45.3.4/electron-v45.3.4-linux-x64.zip) | [electron-v45.3.4-win32-x64.zip](https://github.com/electron/electron/releases/download/v45.3.4/electron-v45.3.4-win32-x64.zip) | [SHASUMS256.txt](https://github.com/electron/electron/releases/download/v45.3.4/SHASUMS256.txt) |
+| 45.4.1 | [electron-v45.4.1-linux-x64.zip](https://github.com/electron/electron/releases/download/v45.4.1/electron-v45.4.1-linux-x64.zip) | [electron-v45.4.1-win32-x64.zip](https://github.com/electron/electron/releases/download/v45.4.1/electron-v45.4.1-win32-x64.zip) | [SHASUMS256.txt](https://github.com/electron/electron/releases/download/v45.4.1/SHASUMS256.txt) |
+| 45.5.0 | [electron-v45.5.0-linux-x64.zip](https://github.com/electron/electron/releases/download/v45.5.0/electron-v45.5.0-linux-x64.zip) | [electron-v45.5.0-win32-x64.zip](https://github.com/electron/electron/releases/download/v45.5.0/electron-v45.5.0-win32-x64.zip) | [SHASUMS256.txt](https://github.com/electron/electron/releases/download/v45.5.0/SHASUMS256.txt) |
+
+Optionnel, même dossier :
+
+| Fichier | Quand |
+|---|---|
+| `electron-v<V>-linux-arm64.zip` / `electron-v<V>-win32-arm64.zip` | build `--arm64` |
+| `ffmpeg-v<V>-linux-x64.zip` / `ffmpeg-v<V>-win32-x64.zip` | option `downloadAlternateFFmpeg: true` |
+
+### 4.2 Toolsets electron-builder — ère C (26.15.0 → 26.18.1), config par défaut
+
+Légende colonnes : **L→L** = runner Linux, cible Linux · **L→W** = runner Linux, cible Windows · **W→W** = runner Windows, cible Windows.
+
+| Release (tag) | Fichier | L→L | L→W | W→W | Usage |
+|---|---|---|---|---|---|
+| `7zip@1.0.0` | [7zip-linux-x64.tar.gz](https://github.com/electron-userland/electron-builder-binaries/releases/download/7zip@1.0.0/7zip-linux-x64.tar.gz) | ✅ | ✅ | | archives + extraction des toolsets `.7z` |
+| `7zip@1.0.0` | [7zip-win-x64.tar.gz](https://github.com/electron-userland/electron-builder-binaries/releases/download/7zip@1.0.0/7zip-win-x64.tar.gz) | | | ✅ | idem (runner Windows) |
+| `icons@1.2.3` | [icons-bundle.tar.gz](https://github.com/electron-userland/electron-builder-binaries/releases/download/icons@1.2.3/icons-bundle.tar.gz) | ✅ | ✅ | ✅ | conversion d'icônes (`ico`, `icns`, set PNG) — 26.16.x → 26.18.1 |
+| `icons@1.2.1` | [icons-bundle.tar.gz](https://github.com/electron-userland/electron-builder-binaries/releases/download/icons@1.2.1/icons-bundle.tar.gz) | ✅ | ✅ | ✅ | idem — 26.15.5 → 26.15.7 |
+| `icons@1.1.0` | [icons-bundle.tar.gz](https://github.com/electron-userland/electron-builder-binaries/releases/download/icons@1.1.0/icons-bundle.tar.gz) | ✅ | ✅ | ✅ | idem — 26.15.0 → 26.15.4 (vérifié sur 26.15.3) |
+| `appimage-12.0.1` | [appimage-12.0.1.7z](https://github.com/electron-userland/electron-builder-binaries/releases/download/appimage-12.0.1/appimage-12.0.1.7z) | ✅ | | | target `AppImage` (toolset par défaut `0.0.0`) |
+| `fpm@2.1.4` | [fpm-1.17.0-ruby-3.4.3-linux-amd64.7z](https://github.com/electron-userland/electron-builder-binaries/releases/download/fpm@2.1.4/fpm-1.17.0-ruby-3.4.3-linux-amd64.7z) | ✅ | | | targets `deb`, `rpm`, `pacman`, `apk`… (fpm + Ruby embarqués) |
+| `nsis-3.0.4.1` | [nsis-3.0.4.1.7z](https://github.com/electron-userland/electron-builder-binaries/releases/download/nsis-3.0.4.1/nsis-3.0.4.1.7z) | | ✅ | ✅ | target `nsis` (makensis) |
+| `nsis-resources-3.4.1` | [nsis-resources-3.4.1.7z](https://github.com/electron-userland/electron-builder-binaries/releases/download/nsis-resources-3.4.1/nsis-resources-3.4.1.7z) | | ✅ | ✅ | ressources/plugins NSIS |
+| `winCodeSign-2.6.0` | [winCodeSign-2.6.0.7z](https://github.com/electron-userland/electron-builder-binaries/releases/download/winCodeSign-2.6.0/winCodeSign-2.6.0.7z) | | ✅* | ✅* | *signature de code (code signing) uniquement : `signtool` (Windows) / `osslsigncode` (Linux) |
+
+### 4.3 Toolsets optionnels (opt-in via la clé `toolsets`, statut « beta » en v26)
+
+| Clé `toolsets` | Valeur | Release (tag) | Fichier(s) | Intérêt |
+|---|---|---|---|---|
+| `appimage` | `"1.0.3"` | `appimage@1.0.3` | `appimage-tools-runtime-20251108.tar.gz` | runtime statique (FUSE3-compatible) |
+| `nsis` | `"1.2.1"` | `nsis@1.2.1` | `nsis-bundle-3.12.tar.gz` | makensis 3.12 + plugins en un seul bundle |
+| `wine` | `"1.0.1"` | `wine@1.0.1` | `wine-11.0-linux-x86_64.tar.xz` | **Wine 11 téléchargé** → évite d'installer Wine via apt-get |
+| `winCodeSign` | `"1.1.0"` | `win-codesign@1.1.0` | `win-codesign-linux-amd64.zip`, `windows-kits-bundle-10_0_26100_0.zip`, `rcedit-windows-2_0_0.zip` | outils de signature récents (Windows Kits 10.0.26100.0) |
+
+Exemple (`electron-builder.yml`) :
+
+```yaml
+toolsets:
+  wine: "1.0.1"     # Wine 11 depuis electron-builder-binaries au lieu du Wine système
+  # nsis: "1.2.1"
+  # appimage: "1.0.3"
+```
+
+### 4.4 Ères A et B (26.0.0 → 26.14.0) — si vraiment nécessaire
+
+| Élément | Source |
+|---|---|
+| `winCodeSign-2.6.0`, `nsis-3.0.4.1`, `nsis-resources-3.4.1`, `appimage-12.0.1` | GitHub (mêmes fichiers que §4.2) |
+| `fpm@2.1.4` | GitHub — vérifié présent en 26.8.1 et 26.14.0 |
+| fpm des 26.0.x | **à confirmer** via la méthode empirique (§10.4) |
+| 7-Zip, app-builder | **npm** (`7zip-bin`, `app-builder-bin`) → via le proxy npm, pas GitHub |
+| Wine | requis sur Linux pour toute cible Windows en ère A |
+
+---
+
+## 5. Images CI (officielles)
+
+| Usage | Image | Lien | Base | Remarques |
+|---|---|---|---|---|
+| Linux / Linux→Windows | `node:26-trixie` | [Docker Hub `node`](https://hub.docker.com/_/node) | Debian 13 (trixie) | Docker Official Image. `node:26` = trixie. Dernier tag vu : 26.12.1 (22/10/2026) |
+| Idem, Debian 12 | `node:26-bookworm` | idem | Debian 12 | si Nexus ne proxifie que bookworm |
+| Clé en main Linux | `electronuserland/builder:24` (daté : `24-05.26`) | [Docker Hub](https://hub.docker.com/r/electronuserland/builder) · [Dockerfiles](https://github.com/electron-userland/electron-builder/tree/master/docker) | Ubuntu 22.04 (`buildpack-deps:22.04-curl`) | image du projet electron-builder ; **Node 24 max** ; x86_64 uniquement ; dernière maj 21/05/2026 |
+| Clé en main Linux→Windows | `electronuserland/builder:24-wine` (daté : `24-wine-05.26`) | idem | idem + `winehq-stable` | ~1,5 Go |
+| Squirrel.Windows | `electronuserland/builder:24-wine-mono` | idem | idem + Mono | uniquement si target `squirrel` |
+| Windows natif | `mcr.microsoft.com/windows/servercore:ltsc2022` | [Docker Hub servercore](https://hub.docker.com/_/microsoft-windows-servercore) | Windows Server 2022 | host Windows de **même version** (process isolation), sinon Hyper-V isolation |
+| Windows natif (récent) | `mcr.microsoft.com/windows/servercore:ltsc2025` | idem | Windows Server 2025 | idem |
+| Node pour Windows | zip officiel | [node-v26.12.1-win-x64.zip](https://nodejs.org/dist/v26.12.1/node-v26.12.1-win-x64.zip) | — | l'image officielle `node` ne publie **que** Linux (Debian/Alpine) |
+
+Rôle des tags `electronuserland/builder` (doc officielle) :
+
+| Tag | Contenu |
+|---|---|
+| `24` / `22` | Node + dépendances de build Linux |
+| `wine` | Wine + Node → cibles Windows |
+| `wine-mono` | + Mono → Squirrel.Windows |
+| `wine-chrome` | + google-chrome-stable + xvfb → tests headless |
+| `base` | dépendances système seules, pas pour usage direct |
+
+---
+
+## 6. Paquets apt-get (image `node:26`)
+
+### 6.1 Cibles Linux
+
+| Paquet | Requis pour |
+|---|---|
+| `rpm` | target `rpm` (rpmbuild) |
+| `libarchive-tools` | `bsdtar` → target `pacman` |
+| `lzip` | target `tar.lz` |
+| `libopenjp2-tools` | recommandé par la doc electron-builder pour les formats distribuables |
+| `liblzo2-2` | présent dans l'image officielle `electronuserland/builder:base` (outillage AppImage/squashfs) |
+| `git`, `unzip`, `xz-utils` | normalement déjà présents dans `node:26` (non-slim) ; à ajouter en `-slim` avec `build-essential python3 ca-certificates` |
+
+### 6.2 Cible Windows depuis Linux
+
+| Paquet | Requis pour |
+|---|---|
+| `dpkg --add-architecture i386` | prérequis multiarch (l'installeur NSIS est un exe 32 bits) |
+| `wine` `wine32` `wine64` `libwine` `libwine:i386` `fonts-wine` | génération de l'**uninstaller NSIS** : electron-builder lance l'installeur sous Wine sur Linux |
+| `osslsigncode` *(optionnel)* | signature depuis Linux avec `USE_SYSTEM_OSSLSIGNCODE=true` (le `osslsigncode` embarqué dans `winCodeSign-2.6.0` dépend de `libssl1.1`, absent de Debian 13) |
+| `mono-complete` *(optionnel)* | uniquement target `squirrel` |
+
+Cas **sans Wine** :
+- target `portable` (pas d'uninstaller) ;
+- ou `toolsets.wine: "1.0.1"` (Wine 11 téléchargé depuis electron-builder-binaries, cf. §4.3).
+
+Variables recommandées (reprises de l'image officielle `wine`) :
+
+```bash
+WINEDEBUG=-all,err+all
+WINEDLLOVERRIDES=winemenubuilder.exe=d
+```
+
+### 6.3 Cible Windows sur runner Windows
+
+Aucun paquet système : Node 26 suffit (NSIS, 7-Zip, signtool sont des toolsets téléchargés).
+
+---
+
+## 7. Dockerfiles prêts à l'emploi
+
+> Remplacer les registres publics par les proxys Nexus (Docker, apt, nodejs.org) selon la config interne.
+
+### 7.1 Linux (cibles Linux)
+
+```dockerfile
+# electron-ci-linux
+FROM node:26-trixie
+
+ENV DEBIAN_FRONTEND=noninteractive
+
+RUN apt-get update \
+ && apt-get install -y --no-install-recommends \
+      rpm \
+      libarchive-tools \
+      lzip \
+      libopenjp2-tools \
+      liblzo2-2 \
+      git unzip xz-utils \
+ && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /project
+```
+
+### 7.2 Linux → Windows (Wine)
+
+```dockerfile
+# electron-ci-linux-wine
+FROM electron-ci-linux:latest
+
+ENV WINEDEBUG=-all,err+all \
+    WINEDLLOVERRIDES=winemenubuilder.exe=d
+
+RUN dpkg --add-architecture i386 \
+ && apt-get update \
+ && apt-get install -y --no-install-recommends \
+      wine wine32 wine64 libwine libwine:i386 fonts-wine \
+ && rm -rf /var/lib/apt/lists/* \
+ && (wine wineboot --init || true)
+```
+
+### 7.3 Windows natif
+
+```dockerfile
+# escape=`
+# electron-ci-windows
+FROM mcr.microsoft.com/windows/servercore:ltsc2022
+
+SHELL ["powershell", "-Command", "$ErrorActionPreference = 'Stop'; $ProgressPreference = 'SilentlyContinue';"]
+
+ARG NODE_VERSION=26.12.1
+# Remplacer nodejs.org par le proxy Nexus de https://nodejs.org/dist/
+RUN Invoke-WebRequest -Uri "https://nodejs.org/dist/v$env:NODE_VERSION/node-v$env:NODE_VERSION-win-x64.zip" -OutFile node.zip; `
+    Expand-Archive node.zip -DestinationPath C:\; `
+    Rename-Item "C:\node-v$env:NODE_VERSION-win-x64" C:\nodejs; `
+    Remove-Item node.zip; `
+    [Environment]::SetEnvironmentVariable('Path', $env:Path + ';C:\nodejs', [EnvironmentVariableTarget]::Machine)
+
+WORKDIR C:\project
+```
+
+---
+
+## 8. Variables d'environnement (mirror Nexus)
+
+| Variable | Valeur (exemple) | Effet |
+|---|---|---|
+| `ELECTRON_MIRROR` | `https://nexus.local/repository/github/electron/electron/releases/download/` | URL = `ELECTRON_MIRROR` + `v<VERSION>` + `/` + fichier. **Slash final obligatoire** |
+| `ELECTRON_BUILDER_BINARIES_MIRROR` | `https://nexus.local/repository/github/electron-userland/electron-builder-binaries/releases/download/` | URL = mirror + `<release>/` + fichier (slash ajouté si absent) |
+| `ELECTRON_BUILDER_BINARIES_ALLOW_HTTP` | `true` | uniquement si Nexus est en HTTP (HTTPS exigé sinon) |
+| `ELECTRON_BUILDER_CACHE` | chemin **absolu** | cache des toolsets |
+| `XDG_CACHE_HOME` | `$CI_PROJECT_DIR/.cache` | Linux : place `electron/` et `electron-builder/` dans le projet → cache GitLab simple |
+
+À **ne pas** définir : `ELECTRON_BUILDER_BINARIES_CUSTOM_DIR` (remplace le segment `<release>` pour **tous** les toolsets).
+
+Équivalent `.npmrc` (lu via `npm_config_*`) :
+
+```ini
+electron_mirror=https://nexus.local/repository/github/electron/electron/releases/download/
+electron_builder_binaries_mirror=https://nexus.local/repository/github/electron-userland/electron-builder-binaries/releases/download/
+```
+
+Caches par défaut :
+
+| OS | Electron | Toolsets electron-builder |
+|---|---|---|
+| Linux | `$XDG_CACHE_HOME/electron` ou `~/.cache/electron` | `$XDG_CACHE_HOME/electron-builder` ou `~/.cache/electron-builder` |
+| Windows | `%LOCALAPPDATA%\electron\Cache` | `%LOCALAPPDATA%\electron-builder\Cache` |
+
+---
+
+## 9. Exemple `.gitlab-ci.yml`
+
+```yaml
+variables:
+  ELECTRON_MIRROR: "https://nexus.local/repository/github/electron/electron/releases/download/"
+  ELECTRON_BUILDER_BINARIES_MIRROR: "https://nexus.local/repository/github/electron-userland/electron-builder-binaries/releases/download/"
+
+.electron-cache-linux: &electron-cache-linux
+  variables:
+    XDG_CACHE_HOME: "$CI_PROJECT_DIR/.cache"
+  cache:
+    key: electron-linux
+    paths: [.cache/electron, .cache/electron-builder]
+
+build:linux:
+  <<: *electron-cache-linux
+  image: nexus.local/docker/electron-ci-linux:node26
+  script:
+    - npm ci
+    - npx electron-builder --linux AppImage deb rpm --x64 --publish never
+  artifacts:
+    paths: [dist/*.AppImage, dist/*.deb, dist/*.rpm]
+
+build:windows-from-linux:
+  <<: *electron-cache-linux
+  image: nexus.local/docker/electron-ci-linux-wine:node26
+  script:
+    - npm ci
+    - npx electron-builder --win nsis --x64 --publish never
+  artifacts:
+    paths: [dist/*.exe]
+
+build:windows-native:
+  tags: [windows]          # runner GitLab Windows, executor docker-windows
+  image: nexus.local/docker/electron-ci-windows:ltsc2022-node26
+  script:
+    - npm ci
+    - npx electron-builder --win nsis --x64 --publish never
+  artifacts:
+    paths: [dist/*.exe]
+```
+
+---
+
+## 10. Tuto : trouver les dépendances d'une version
+
+Tout passe par **npm** (accessible via le proxy) : pas besoin d'Internet.
+
+### 10.1 Lister les versions disponibles
+
+```bash
+# Electron : dist-tags + versions d'une plage
+npm view electron dist-tags
+npm view electron versions --json | jq -r '.[]' | grep -E '^45\.(3|4|5)\.[0-9]+$'
+
+# electron-builder : dist-tags + toutes les 26.x stables
+npm view electron-builder dist-tags
+npm view electron-builder versions --json | jq -r '.[]' | grep -E '^26\.[0-9]+\.[0-9]+$'
+```
+
+⚠️ Une version peut exister en tag GitHub sans être publiée (ex. 45.4.0) : la source de vérité est **npm** + [releases.electronjs.org](https://releases.electronjs.org/).
+
+### 10.2 Electron : la liste exacte des fichiers est dans le package npm
+
+Le package `electron` embarque **`checksums.json`** : toutes les archives de la release + leur SHA-256.
+
+```bash
+npm pack electron@45.5.0
+tar -xOzf electron-45.5.0.tgz package/checksums.json \
+  | jq -r 'keys[]' \
+  | grep -E '^electron-v.*-(linux|win32)-(x64|arm64)\.zip$'
+```
+
+Autres infos utiles du package :
+
+| Fichier / champ | Contenu |
+|---|---|
+| `checksums.json` | noms + SHA-256 des artefacts GitHub |
+| `package.json` → `engines` | version Node minimale (`>=22.12.0` pour 45.x) |
+| `abi_version` | ABI Node (modules natifs) |
+| [releases.electronjs.org/release/v45.5.0](https://releases.electronjs.org/release/v45.5.0) | Chromium / Node / V8 + notes |
+
+### 10.3 electron-builder : lire les toolsets dans `app-builder-lib`
+
+Les noms de release et d'archive (avec checksum) sont **codés en dur** dans `app-builder-lib/out/toolsets/*.js` (ère C) — fichiers : `7zip.js`, `icons.js`, `linux.js`, `windows.js`, `wine.js`.
+
+```bash
+# Sans installer le projet : récupérer le package
+npm pack app-builder-lib@26.18.1
+mkdir abl && tar -xzf app-builder-lib-26.18.1.tgz -C abl
+ABL=abl/package/out        # ou node_modules/app-builder-lib/out dans un projet installé
+
+# Archives référencées
+grep -rhoE '"[A-Za-z0-9._@-]+\.(7z|tar\.gz|tar\.xz|zip)"' "$ABL/toolsets" | sort -u
+
+# Noms de release (tags GitHub)
+grep -rhoE '(7zip|icons|nsis|appimage|fpm|wine|win-codesign|linux-tools-mac)@[0-9.]+|(winCodeSign|nsis-resources|nsis|appimage|wine)-[0-9][0-9.]*[0-9](-mac)?' "$ABL" | sort -u
+```
+
+- Résultat = **sur-ensemble** (inclut les toolsets optionnels §4.3 et les variantes macOS/arm64).
+- Certaines versions sont construites en template (`appimage@${version}`) : les valeurs possibles sont les **clés** des maps de checksums (`"0.0.0"`, `"1.0.2"`, `"1.0.3"`…).
+- Lecture en ligne possible : `https://unpkg.com/app-builder-lib@26.18.1/out/toolsets/windows.js`.
+- Dépendances npm : `npm view app-builder-lib@26.18.1 dependencies` (présence/absence de `app-builder-bin` / `7zip-bin` = ère A/B vs C).
+
+### 10.4 Méthode empirique (la plus fiable)
+
+Sur une machine avec accès GitHub, même OS/arch/versions/targets que la CI :
+
+```bash
+DEBUG=electron-builder npx electron-builder --linux --win --publish never 2>&1 | grep -iE 'download|url='
+ls -R ~/.cache/electron ~/.cache/electron-builder
+```
+
+- La doc officielle recommande exactement ça pour l'offline : faire **un build en ligne**, puis copier les deux caches.
+- Vérifier la config réellement appliquée (dont `toolsets`) : `dist/builder-effective-config.yaml`.
+
+---
+
+## 11. Points d'attention
+
+| Sujet | Détail |
+|---|---|
+| Electron ≥ 42 | plus de `postinstall` : le binaire est téléchargé au **premier lancement** (`npx electron`). `ELECTRON_SKIP_BINARY_DOWNLOAD` est **supprimé**. `npm ci` ne touche plus GitHub |
+| electron-builder ≠ package `electron` | electron-builder télécharge **son propre** zip Electron (`@electron/get`) → `ELECTRON_MIRROR` requis même si `node_modules/electron` est vide |
+| Modules natifs (native modules) | build Windows depuis Docker Linux **impossible** si un module natif n'a pas de prebuild. Headers téléchargés depuis `https://www.electronjs.org/headers` (`headerURL` par défaut de `@electron/rebuild`) → à proxifier aussi |
+| NSIS sur Linux | Wine nécessaire pour l'uninstaller (sauf `portable`) |
+| Signature depuis Linux | `osslsigncode` (toolset `winCodeSign`) ; sur Debian 13 préférer `osslsigncode` système (§6.2) |
+| electron-builder 27 | dist-tag `next` : ESM natif, Node ≥ 22.12, suppression des variables d'env de toolsets (`APPIMAGE_TOOLS_PATH`, `ELECTRON_BUILDER_NSIS_DIR`, `USE_SYSTEM_WINE`…) → lire la migration avant de monter |
+| `latest` vs `v26` | `latest` = 26.18.0, `v26` = 26.18.1 → **épingler une version exacte** dans `package.json` |
+| Arch | Electron 45 : `x64` et `arm64` uniquement. Images `electronuserland/builder` : x86_64 uniquement |
+
+---
+
+## 12. Liste brute des URLs (copier-coller)
+
+### Electron (Linux x64 + Windows x64 + checksums)
+
+```text
+https://github.com/electron/electron/releases/download/v45.3.0/electron-v45.3.0-linux-x64.zip
+https://github.com/electron/electron/releases/download/v45.3.0/electron-v45.3.0-win32-x64.zip
+https://github.com/electron/electron/releases/download/v45.3.0/SHASUMS256.txt
+https://github.com/electron/electron/releases/download/v45.3.1/electron-v45.3.1-linux-x64.zip
+https://github.com/electron/electron/releases/download/v45.3.1/electron-v45.3.1-win32-x64.zip
+https://github.com/electron/electron/releases/download/v45.3.1/SHASUMS256.txt
+https://github.com/electron/electron/releases/download/v45.3.2/electron-v45.3.2-linux-x64.zip
+https://github.com/electron/electron/releases/download/v45.3.2/electron-v45.3.2-win32-x64.zip
+https://github.com/electron/electron/releases/download/v45.3.2/SHASUMS256.txt
+https://github.com/electron/electron/releases/download/v45.3.3/electron-v45.3.3-linux-x64.zip
+https://github.com/electron/electron/releases/download/v45.3.3/electron-v45.3.3-win32-x64.zip
+https://github.com/electron/electron/releases/download/v45.3.3/SHASUMS256.txt
+https://github.com/electron/electron/releases/download/v45.3.4/electron-v45.3.4-linux-x64.zip
+https://github.com/electron/electron/releases/download/v45.3.4/electron-v45.3.4-win32-x64.zip
+https://github.com/electron/electron/releases/download/v45.3.4/SHASUMS256.txt
+https://github.com/electron/electron/releases/download/v45.4.1/electron-v45.4.1-linux-x64.zip
+https://github.com/electron/electron/releases/download/v45.4.1/electron-v45.4.1-win32-x64.zip
+https://github.com/electron/electron/releases/download/v45.4.1/SHASUMS256.txt
+https://github.com/electron/electron/releases/download/v45.5.0/electron-v45.5.0-linux-x64.zip
+https://github.com/electron/electron/releases/download/v45.5.0/electron-v45.5.0-win32-x64.zip
+https://github.com/electron/electron/releases/download/v45.5.0/SHASUMS256.txt
+```
+
+### Toolsets electron-builder 26.15 → 26.18.1 (défaut)
+
+```text
+https://github.com/electron-userland/electron-builder-binaries/releases/download/7zip@1.0.0/7zip-linux-x64.tar.gz
+https://github.com/electron-userland/electron-builder-binaries/releases/download/7zip@1.0.0/7zip-win-x64.tar.gz
+https://github.com/electron-userland/electron-builder-binaries/releases/download/icons@1.2.3/icons-bundle.tar.gz
+https://github.com/electron-userland/electron-builder-binaries/releases/download/icons@1.2.1/icons-bundle.tar.gz
+https://github.com/electron-userland/electron-builder-binaries/releases/download/icons@1.1.0/icons-bundle.tar.gz
+https://github.com/electron-userland/electron-builder-binaries/releases/download/appimage-12.0.1/appimage-12.0.1.7z
+https://github.com/electron-userland/electron-builder-binaries/releases/download/fpm@2.1.4/fpm-1.17.0-ruby-3.4.3-linux-amd64.7z
+https://github.com/electron-userland/electron-builder-binaries/releases/download/nsis-3.0.4.1/nsis-3.0.4.1.7z
+https://github.com/electron-userland/electron-builder-binaries/releases/download/nsis-resources-3.4.1/nsis-resources-3.4.1.7z
+https://github.com/electron-userland/electron-builder-binaries/releases/download/winCodeSign-2.6.0/winCodeSign-2.6.0.7z
+```
+
+### Toolsets optionnels (opt-in `toolsets`)
+
+```text
+https://github.com/electron-userland/electron-builder-binaries/releases/download/appimage@1.0.3/appimage-tools-runtime-20251108.tar.gz
+https://github.com/electron-userland/electron-builder-binaries/releases/download/nsis@1.2.1/nsis-bundle-3.12.tar.gz
+https://github.com/electron-userland/electron-builder-binaries/releases/download/wine@1.0.1/wine-11.0-linux-x86_64.tar.xz
+https://github.com/electron-userland/electron-builder-binaries/releases/download/win-codesign@1.1.0/win-codesign-linux-amd64.zip
+https://github.com/electron-userland/electron-builder-binaries/releases/download/win-codesign@1.1.0/windows-kits-bundle-10_0_26100_0.zip
+https://github.com/electron-userland/electron-builder-binaries/releases/download/win-codesign@1.1.0/rcedit-windows-2_0_0.zip
+```
+
+### Node pour l'image Windows
+
+```text
+https://nodejs.org/dist/v26.12.1/node-v26.12.1-win-x64.zip
+```
+
+### Images Docker
+
+```text
+docker.io/library/node:26-trixie
+docker.io/electronuserland/builder:24-05.26
+docker.io/electronuserland/builder:24-wine-05.26
+mcr.microsoft.com/windows/servercore:ltsc2022
+mcr.microsoft.com/windows/servercore:ltsc2025
+```
+
+---
+
+## 13. Sources
+
+| Sujet | Lien |
+|---|---|
+| Releases Electron (dates, Chromium, Node) | https://releases.electronjs.org/ |
+| Electron 42 : fin du postinstall | https://www.electronjs.org/blog/electron-42-0 |
+| Electron : mirrors (`ELECTRON_MIRROR`) | https://www.electronjs.org/docs/latest/tutorial/installation |
+| electron-builder : builds offline / air-gapped | https://www.electron.build/docs/tutorials/offline-air-gapped-builds |
+| electron-builder v26 : `ToolsetConfig` | https://www.electron.build/v26/docs/api/app-builder-lib.Interface.ToolsetConfig |
+| electron-builder v26 : multi-platform build | https://www.electron.build/v26/docs/features/multi-platform-build |
+| Code des toolsets (26.18.1) | https://unpkg.com/app-builder-lib@26.18.1/out/toolsets/windows.js (idem `linux.js`, `wine.js`, `7zip.js`, `icons.js`) |
+| Releases electron-builder-binaries | https://github.com/electron-userland/electron-builder-binaries/releases |
+| Dockerfiles electron-builder | https://github.com/electron-userland/electron-builder/tree/master/docker |
+| Image `node` | https://hub.docker.com/_/node |
+| Image `electronuserland/builder` | https://hub.docker.com/r/electronuserland/builder |
+| Image Windows Server Core | https://hub.docker.com/_/microsoft-windows-servercore |
+| Wine sur Debian | https://wiki.debian.org/Wine |
+| Stats npm par version | https://api.npmjs.org/versions/electron-builder/last-week |
