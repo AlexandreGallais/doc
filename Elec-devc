@@ -1,0 +1,46 @@
+{
+  "name": "electron-wayland-win",
+
+  "build": {
+    "dockerfile": "Dockerfile",
+    "args": {
+      // Remplacer par l'image proxifiée dans Nexus
+      "BASE_IMAGE": "node:26-trixie"
+    }
+  },
+
+  // Utilisateur du conteneur aligné sur l'UID/GID de l'hôte
+  // → nécessaire pour avoir le droit d'écrire sur le socket Wayland de l'hôte
+  "remoteUser": "node",
+  "updateRemoteUserUID": true,
+
+  // Seul le socket Wayland est exposé (pas tout le XDG_RUNTIME_DIR de l'hôte :
+  // il contient aussi D-Bus, PipeWire, keyring, gpg-agent…)
+  "mounts": [
+    "source=${localEnv:XDG_RUNTIME_DIR}/${localEnv:WAYLAND_DISPLAY:wayland-0},target=/home/node/.xdg-runtime/${localEnv:WAYLAND_DISPLAY:wayland-0},type=bind"
+  ],
+
+  "containerEnv": {
+    "XDG_RUNTIME_DIR": "/home/node/.xdg-runtime",
+    "WAYLAND_DISPLAY": "${localEnv:WAYLAND_DISPLAY:wayland-0}",
+    "XDG_SESSION_TYPE": "wayland",
+
+    // Miroirs Nexus (voir electron-builder-ci-nexus.md)
+    "ELECTRON_MIRROR": "https://nexus.local/repository/github/electron/electron/releases/download/",
+    "ELECTRON_BUILDER_BINARIES_MIRROR": "https://nexus.local/repository/github/electron-userland/electron-builder-binaries/releases/download/"
+  },
+
+  "runArgs": [
+    // /dev/shm par défaut = 64 Mo → crash des renderers Chromium
+    "--shm-size=1g"
+
+    // --- Optionnel : GPU (sinon rendu logiciel Mesa llvmpipe) ---
+    // "--device=/dev/dri",
+    // "--group-add=<GID du groupe render de l'hôte>",
+
+    // --- Optionnel : hôte SELinux (RHEL / Fedora) ---
+    // "--security-opt=label=disable"
+  ],
+
+  "postCreateCommand": "npm ci"
+}
